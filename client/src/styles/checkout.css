@@ -1,0 +1,113 @@
+/* ─── MELORAA Checkout (Premium) ─────────────────────────────────────────────── */
+.checkout-page { min-height: 100vh; background: #ffffff; padding: 40px 24px; }
+.checkout-container { max-width: 1200px; margin: 0 auto; }
+.checkout-container h1 {
+  font-family: var(--font-display); font-size: 2.2rem; color: var(--maroon);
+  margin-bottom: 32px; letter-spacing: 0.04em;
+}
+
+.empty-cart-message { background: white; padding: 60px 20px; text-align: center; border: 1px solid #eee; }
+.empty-cart-message p { font-size: 1.1rem; color: #888; margin: 0 0 28px; }
+.btn-shop {
+  display: inline-block; padding: 14px 36px; background: var(--maroon); color: white;
+  text-decoration: none; font-weight: 600; font-size: 0.78rem; transition: all 0.3s;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.btn-shop:hover { background: var(--brand-black); }
+
+.checkout-layout { display: grid; grid-template-columns: 1fr 380px; gap: 40px; }
+.checkout-form { background: white; padding: 32px; border: 1px solid #eee; }
+.form-section { margin-bottom: 28px; }
+.form-section:last-of-type { margin-bottom: 0; }
+.form-section h2 {
+  font-size: 0.9rem; margin: 0 0 20px; color: var(--maroon); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+
+.checkout-form input, .payment-select {
+  width: 100%; padding: 14px 18px; margin-bottom: 16px; border: 1px solid #ddd;
+  font-size: 1rem; box-sizing: border-box; transition: border-color 0.3s;
+  font-family: var(--font-body); background: white; color: #1a1a1a;
+}
+.checkout-form input:focus, .payment-select:focus { outline: none; border-color: #4f0c10; }
+.checkout-form input::placeholder { color: #bbb; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.form-row input { margin-bottom: 0; }
+.payment-select { background: white; cursor: pointer; }
+
+.btn-place-order {
+  width: 100%; padding: 18px; background: var(--maroon); color: white; border: none;
+  font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 24px;
+  transition: all 0.3s; letter-spacing: 0.15em; text-transform: uppercase;
+}
+.btn-place-order:hover:not(:disabled) { background: var(--brand-black); }
+.btn-place-order:disabled { background: #ddd; cursor: not-allowed; color: #aaa; }
+
+.checkout-summary {
+  background: #fafafa; padding: 32px; border: 1px solid #eee;
+  height: fit-content; position: sticky; top: 140px;
+}
+.checkout-summary h2 {
+  font-size: 0.9rem; margin: 0 0 24px; color: var(--maroon); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+.summary-items {
+  max-height: 280px; overflow-y: auto; margin-bottom: 20px;
+  padding-bottom: 18px; border-bottom: 1px solid #eee;
+}
+.summary-item { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 1rem; }
+.item-name { font-weight: 500; color: #1a1a1a; margin: 0; }
+.item-qty { color: #aaa; margin: 4px 0 0; font-size: 0.85rem; }
+.item-total { font-weight: 700; color: #1a1a1a; }
+
+.summary-totals { display: flex; flex-direction: column; gap: 8px; }
+.total-row { display: flex; justify-content: space-between; font-size: 1rem; color: #666; }
+.total-row.total {
+  border-top: 1px solid #ddd; padding-top: 16px; font-size: 1.4rem;
+  font-weight: 700; color: var(--maroon); margin-top: 12px;
+}
+
+/* ─── Payment Methods ───────────────────────────────────────────────────────── */
+.payment-methods { display: flex; flex-direction: column; gap: 12px; }
+.payment-option {
+  display: flex; alignItems: center; gap: 12px; padding: 16px; 
+  border: 1px solid #eee; border-radius: 4px; cursor: pointer;
+  transition: all 0.3s; background: transparent;
+}
+.payment-option:hover { border-color: #4f0c10; }
+.payment-option.active { border: 2px solid #4f0c10; background: rgba(79, 12, 16, 0.03); }
+.payment-info { flex: 1; }
+.payment-info .title { font-weight: 700; color: #1a1a1a; font-size: 1rem; margin-bottom: 2px; }
+.payment-info .desc { font-size: 0.85rem; color: #888; }
+
+/* ─── Coupon Section ────────────────────────────────────────────────────────── */
+.coupon-section { margin-top: 24px; padding-top: 20px; border-top: 1px dashed #ddd; }
+.coupon-input-group { display: flex; gap: 8px; margin-top: 10px; }
+.coupon-input { 
+  flex: 1; padding: 10px 14px !important; margin-bottom: 0 !important;
+  font-size: 0.8rem !important; border: 1px solid #ddd !important;
+}
+.btn-apply {
+  padding: 0 24px; background: var(--maroon); color: white; border: none;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.3s;
+}
+.btn-apply:hover { background: var(--brand-black); }
+.applied-coupon {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #f0f7f0; padding: 10px 14px; border-radius: 4px; margin-top: 10px;
+  border: 1px solid #d4edda;
+}
+.coupon-tag { color: #155724; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.btn-remove-coupon {
+  background: none; border: none; color: #721c24; cursor: pointer;
+  font-size: 1.1rem; padding: 0; line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .checkout-layout { grid-template-columns: 1fr; }
+  .form-row, .form-row.three { grid-template-columns: 1fr; }
+  .checkout-summary { position: static; order: -1; }
+}

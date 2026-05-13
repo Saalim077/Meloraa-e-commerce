@@ -1,0 +1,46 @@
+/* ─── MELORAA Profile (Premium) ──────────────────────────────────────────────── */
+.profile-container { display: flex; gap: 40px; padding: 40px 24px; max-width: 1200px; margin: 0 auto; }
+.profile-sidebar {
+  flex: 0 0 260px; border: 1px solid #e8e2db; overflow: hidden; height: fit-content;
+  background: white; border-radius: var(--r-md); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+.profile-nav-item {
+  display: block; width: 100%; padding: 16px 24px; text-align: left;
+  background: none; border: none; border-bottom: 1px solid #f5f0e8;
+  color: #6b665e; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: var(--font-body);
+}
+.profile-nav-item:last-child { border-bottom: none; }
+.profile-nav-item:hover { background: var(--maroon-soft); color: var(--maroon); }
+.profile-nav-item.active { background: var(--maroon); color: white; font-weight: 700; }
+.profile-content { flex: 1; }
+
+.profile-welcome {
+  font-size: 1.1rem; line-height: 1.8; color: #666; margin-bottom: 32px;
+}
+.profile-welcome strong { color: var(--maroon); font-weight: 700; }
+.profile-welcome span.logout { color: var(--maroon); cursor: pointer; text-decoration: underline; font-weight: 600; }
+
+.orders-table { width: 100%; border-collapse: collapse; }
+.orders-table th {
+  text-align: left; padding: 16px 20px; border-bottom: 2px solid #e8e2db;
+  color: var(--maroon); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;
+  font-weight: 700; background: #fcfaf7;
+}
+.orders-table td { padding: 20px 20px; border-bottom: 1px solid #f5f0e8; color: #1a1a1a; font-size: 0.95rem; }
+.order-actions { display: flex; gap: 10px; }
+
+.address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.address-card h3 { font-family: var(--font-display); font-size: 1.6rem; margin-bottom: 18px; color: var(--maroon); }
+.address-edit-link { float: right; font-size: 0.85rem; color: var(--maroon); text-decoration: none; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+.address-edit-link:hover { text-decoration: underline; }
+.address-details {
+  border: 1px solid #eee; padding: 24px; min-height: 140px; color: #888;
+  line-height: 1.8; background: white; font-size: 0.88rem;
+}
+
+@media (max-width: 992px) {
+  .profile-container { flex-direction: column; }
+  .profile-sidebar { flex: none; }
+  .address-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,110 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const path = require('path');
+const { version } = require('./package.json');
+require('dotenv').config();
+
+const app = express();
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (!req.originalUrl.includes('/uploads')) {
+      console.log(`\x1b[36m[PERF]\x1b[0m ${req.method} ${req.originalUrl} - ${res.statusCode} (\x1b[33m${duration}ms\x1b[0m)`);
+    }
+  });
+  next();
+});
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true,
+}));
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again later.' },
+});
+app.use('/api', globalLimiter);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/products', require('./routes/products'));
+app.use('/api/categories', require('./routes/categories'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/coupons', require('./routes/coupons'));
+app.use('/api/upload', require('./routes/upload'));
+app.use('/api/payment', require('./routes/payment'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api/admin', require('./routes/admin').router);
+app.use('/api/bulk', require('./routes/bulk-operations'));
+app.use('/api/returns', require('./routes/returns'));
+
+// ─── Health Check ─────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    version,
+    server: 'LuxeStore API v1.0',
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
+});
+
+// ─── MongoDB Connect ──────────────────────────────────────────────────────────
+const startServer = async () => {
+  const PORT = process.env.PORT || 5000;
+
+  if (!process.env.JWT_SECRET) {
+    console.error('❌ FATAL: JWT_SECRET environment variable is not set.');
+    console.error('   Set JWT_SECRET in server/.env before starting the server.');
+    process.exit(1);
+  }
+
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('✅ MongoDB connected');
+  } catch (err) {
+    console.warn('⚠️  MongoDB connection failed:', err.message);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('❌ Cannot start in production without a database. Exiting.');
+      process.exit(1);
+    }
+    console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');
+  }
+
+  app.listen(PORT, () => {
+    console.log(`🚀 LuxeStore API running on http://localhost:${PORT}`);
+    console.log(`📊 Admin: http://localhost:3000/admin`);
+  });
+};
+
+startServer();

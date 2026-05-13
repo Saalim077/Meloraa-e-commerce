@@ -1,0 +1,15 @@
+{
+  "name": "luxestore-admin",
+  "version": "1.0.0",
+  "description": "LuxeStore E-Commerce Admin Panel",
+  "scripts": {
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm start",
+    "client": "cd client && npm start",
+    "seed": "cd server && node seed.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

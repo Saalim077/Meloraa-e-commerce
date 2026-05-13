@@ -1,0 +1,64 @@
+/* ─── MELORAA Header (Premium) ──────────────────────────────────────────────── */
+.header {
+  width: 100%; background: #ffffff; position: sticky; top: 0; z-index: 1000;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.header-topbar-premium {
+  background: var(--maroon); color: #fff; text-align: center;
+  padding: 10px 0; font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+}
+
+.header-premium {
+  background: #ffffff; border-bottom: 1px solid #f2f2f2; position: sticky; top: 0; z-index: 1000;
+  padding: 18px 0; transition: var(--transition);
+}
+
+.header-grid-premium {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 40px;
+}
+
+/* Nav */
+.header-nav-premium { display: flex; gap: 32px; list-style: none; padding: 0; }
+.header-nav-premium li a {
+  font-size: 0.9rem; font-weight: 600; color: var(--brand-black);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  transition: var(--transition);
+}
+.header-nav-premium li a:hover { color: var(--maroon); }
+.header-nav-premium .sale-link { color: var(--maroon); }
+
+/* Logo */
+.header-logo-premium {
+  font-family: var(--font-display); font-size: 2.2rem; font-weight: 700;
+  letter-spacing: 0.18em; color: var(--maroon); text-align: center;
+  line-height: 1;
+}
+
+/* Icons */
+.header-icons-premium { display: flex; gap: 28px; justify-content: flex-end; align-items: center; }
+.header-icon-btn { font-size: 1.3rem; color: #4f0c10; position: relative; transition: var(--transition); cursor: pointer; }
+.header-icon-btn:hover { color: var(--maroon); transform: translateY(-1px); }
+.cart-badge-premium {
+  position: absolute; top: -8px; right: -8px; background: var(--maroon);
+  color: #fff; font-size: 0.6rem; font-weight: 700; width: 16px; height: 16px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .header-grid-premium { grid-template-columns: auto 1fr auto; gap: 20px; }
+  .header-nav-premium { display: none; } /* Hide for simplicity in mobile demo */
+  .header-logo-premium { font-size: 1.6rem; }
+}
+
+@media (max-width: 900px) {
+  .header-nav-left { display: none; }
+  .header-row { grid-template-columns: 1fr auto; }
+}
+
+@media (max-width: 768px) {
+  .header-logo { font-size: 1.5rem; letter-spacing: 0.15em; }
+  .header-right { gap: 14px; }
+  .header-main-container { padding: 14px 0; }
+}

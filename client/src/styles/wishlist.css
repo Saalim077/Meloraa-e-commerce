@@ -1,0 +1,46 @@
+/* ─── MELORAA Wishlist (Premium) ─────────────────────────────────────────────── */
+.wishlist-container { padding: 40px 24px; min-height: 80vh; max-width: 1400px; margin: 0 auto; }
+.wishlist-header { margin-bottom: 40px; }
+.wishlist-title {
+  font-family: var(--font-display); font-size: 2rem; margin-bottom: 6px;
+  color: #1a1a1a; letter-spacing: 0.04em;
+}
+.wishlist-count {
+  color: #aaa; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.wishlist-empty-state { padding: 80px 40px; text-align: center; }
+.wishlist-empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.2; }
+.wishlist-empty-title { margin-bottom: 10px; font-family: var(--font-display); color: #1a1a1a; }
+.wishlist-empty-text { color: #aaa; margin-bottom: 24px; font-size: 0.92rem; }
+
+.wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.wishlist-card {
+  overflow: hidden; transition: opacity 0.3s; position: relative; background: white;
+}
+.wishlist-card:hover { opacity: 0.94; }
+.wishlist-remove-btn {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  background: white; color: #1a1a1a; border: none; border-radius: 50%;
+  width: 32px; height: 32px; font-size: 0.9rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; opacity: 0;
+}
+.wishlist-card:hover .wishlist-remove-btn { opacity: 1; }
+.wishlist-remove-btn:hover { background: #e05252; color: white; }
+.wishlist-image-container { height: 340px; background: #f5f5f5; overflow: hidden; }
+.wishlist-image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+.wishlist-card:hover .wishlist-image { transform: scale(1.04); }
+.wishlist-info { padding: 16px 4px; text-align: center; }
+.wishlist-product-name {
+  font-size: 0.85rem; font-weight: 400; margin-bottom: 6px; line-height: 1.4;
+  color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.02em;
+}
+.wishlist-action-row { display: flex; justify-content: center; align-items: center; }
+.wishlist-price { font-weight: 600; font-size: 1rem; color: #1a1a1a; }
+
+@media (max-width: 768px) {
+  .wishlist-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .wishlist-image-container { height: 220px; }
+  .wishlist-product-name { font-size: 0.75rem; }
+}
