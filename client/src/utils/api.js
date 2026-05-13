@@ -106,6 +106,7 @@ export const settingsAPI = {
 export const adminAPI = {
   getActivityLogs: (params) => api.get('/admin', { params }),
   getInventoryAlerts: (params) => api.get('/admin/inventory/alerts', { params }),
+  getAllInventory: (params) => api.get('/admin/inventory/all', { params }),
   resolveInventoryAlert: (id) => api.put(`/admin/inventory/alerts/${id}/resolve`),
 };
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const { Product } = require('../models');
+const Product = require('../models/Product');
 const { protect, authorize } = require('../middleware/auth');
 const { createActivityLog } = require('./admin');
 const { body } = require('express-validator');
@@ -133,11 +133,17 @@ router.delete('/products/bulk', protect, authorize('admin'), [
 // ─── EXPORT Products (CSV) ────────────────────────────────────────────────────
 router.get('/products/export/csv', protect, authorize('admin', 'staff'), async (req, res) => {
   try {
-    const products = await Product.find().select('name sku price stock category isActive');
+    const products = await Product.find().select('name sku price stock category isActive hasVariants variants');
     
-    let csv = 'ID,Name,SKU,Price,Stock,Category,Active\n';
+    let csv = 'ID,Name,SKU,Price,Stock,Category,Status,Variant\n';
     for (const p of products) {
-      csv += `"${p._id}","${p.name}","${p.sku}",${p.price},${p.stock},"${p.category}",${p.isActive}\n`;
+      if (p.hasVariants && p.variants && p.variants.length > 0) {
+        for (const v of p.variants) {
+          csv += `"${p._id}","${p.name}","${v.sku || p.sku}",${v.price || p.price},${v.stock || 0},"${p.category}","${p.isActive ? 'Active' : 'Inactive'}","${v.name}"\n`;
+        }
+      } else {
+        csv += `"${p._id}","${p.name}","${p.sku}",${p.price},${p.stock},"${p.category}","${p.isActive ? 'Active' : 'Inactive'}","-"\n`;
+      }
     }
 
     await createActivityLog(req.user.id, 'export', 'product', 'bulk');

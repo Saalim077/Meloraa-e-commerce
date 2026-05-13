@@ -9,6 +9,7 @@ const categorySchema = new mongoose.Schema({
   parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
   level: { type: Number, default: 0 },
   attributes: [String],
+  sizeChart: String, // URL to image
   isActive: { type: Boolean, default: true },
   order: { type: Number, default: 0 },
 }, { timestamps: true });
@@ -188,6 +189,7 @@ const Counter = mongoose.model('Counter', counterSchema);
 const Category = mongoose.model('Category', categorySchema);
 const Order = mongoose.model('Order', orderSchema);
 const Coupon = mongoose.model('Coupon', couponSchema);
+const Product = require('./Product');
 const Return = require('./Return');
 
-module.exports = { Category, Order, Coupon, Return, Counter };
+module.exports = { Category, Order, Coupon, Return, Counter, Product };

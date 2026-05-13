@@ -59,10 +59,14 @@ router.get('/', optionalAuth, async (req, res, next) => {
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
     // Try to find by ID first, then by slug
-    let product = await Product.findById(req.params.id).populate('category', 'name slug');
+    let product = await Product.findById(req.params.id)
+      .populate('category', 'name slug sizeChart')
+      .populate('subCategory', 'name slug sizeChart');
     
     if (!product) {
-      product = await Product.findOne({ slug: req.params.id }).populate('category', 'name slug');
+      product = await Product.findOne({ slug: req.params.id })
+        .populate('category', 'name slug sizeChart')
+        .populate('subCategory', 'name slug sizeChart');
     }
     
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });

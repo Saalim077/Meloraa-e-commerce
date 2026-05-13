@@ -86,6 +86,34 @@ router.get('/inventory/alerts', protect, authorize('admin', 'staff'), async (req
   }
 });
 
+// ─── GET All Inventory ────────────────────────────────────────────────────────
+router.get('/inventory/all', protect, authorize('admin', 'staff'), async (req, res) => {
+  try {
+    const { page = 1, limit = 20, search = '' } = req.query;
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: new RegExp(search, 'i') },
+        { sku: new RegExp(search, 'i') }
+      ];
+    }
+    const products = await Product.find(query)
+      .select('name sku price stock isActive category hasVariants variants')
+      .populate('category', 'name')
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .limit(parseInt(limit))
+      .sort({ stock: 1 });
+      
+    const total = await Product.countDocuments(query);
+    res.json({
+      products,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ─── CREATE Inventory Alert ───────────────────────────────────────────────────
 const checkInventoryAlerts = async (productId) => {
   try {

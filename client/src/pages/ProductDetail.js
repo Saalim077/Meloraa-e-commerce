@@ -22,6 +22,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState('');
   const [activeTab, setActiveTab] = useState('details');
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
   useEffect(() => {
     fetchProduct();
@@ -216,8 +217,18 @@ export default function ProductDetail() {
 
             {/* Attributes */}
             {product.attributes?.filter(a => a.isVariation).map(attr => (
-              <div key={attr.name}>
-                <span className="attr-label">{attr.name}: {selectedAttrs[attr.name]}</span>
+              <div key={attr.name} style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span className="attr-label">{attr.name}: {selectedAttrs[attr.name]}</span>
+                  {attr.name.toLowerCase() === 'size' && (product.subCategory?.sizeChart || product.category?.sizeChart) && (
+                    <button 
+                      onClick={() => setShowSizeGuide(true)}
+                      style={{ background: 'none', border: 'none', color: 'var(--maroon)', fontSize: '0.75rem', fontWeight: '700', textDecoration: 'underline', cursor: 'pointer' }}
+                    >
+                      VIEW SIZE GUIDE
+                    </button>
+                  )}
+                </div>
                 <div className="box-selector">
                   {attr.values?.map(val => {
                     const isSelected = selectedAttrs[attr.name] === val;
@@ -296,6 +307,61 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* Size Guide Modal - Full View Aesthetic */}
+      {showSizeGuide && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(26, 25, 23, 0.98)', zIndex: 99999,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          {/* Top Header */}
+          <div style={{ textAlign: 'center', marginBottom: '40px', color: 'white' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', marginBottom: '10px' }}>Size Guide</h2>
+            <p style={{ color: '#888', fontSize: '1rem', letterSpacing: '0.1em' }}>{product.subCategory?.name || product.category?.name}</p>
+          </div>
+
+          {/* Centered Image Content */}
+          <div style={{ maxWidth: '900px', width: '95%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <img 
+              src={product.subCategory?.sizeChart || product.category?.sizeChart} 
+              alt="Size Chart" 
+              style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', filter: 'brightness(1.1)' }} 
+            />
+          </div>
+
+          <p style={{ marginTop: '30px', color: '#666', fontSize: '0.85rem', textAlign: 'center', maxWidth: '600px', lineHeight: '1.6' }}>
+            These are body measurements. All measurements are in inches. <br/>
+            If you are between sizes, we recommend choosing the larger size.
+          </p>
+
+          {/* Bottom Close Button */}
+          <button 
+            onClick={() => setShowSizeGuide(false)} 
+            style={{ 
+              marginTop: '50px',
+              width: '50px', height: '50px', 
+              borderRadius: '50%', 
+              background: 'white', 
+              color: 'black', 
+              border: 'none', 
+              fontSize: '1.5rem', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+              transition: 'transform 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <Footer />
     </>
   );
