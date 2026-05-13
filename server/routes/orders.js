@@ -235,10 +235,17 @@ router.get('/my-orders', protect, async (req, res, next) => {
 // GET /api/orders (admin)
 router.get('/', protect, authorize('admin', 'staff'), async (req, res, next) => {
   try {
-    const { status, paymentStatus, page = 1, limit = 20 } = req.query;
+    const { status, paymentStatus, paymentMethod, page = 1, limit = 20 } = req.query;
     const query = {};
     if (status) query.orderStatus = status;
     if (paymentStatus) query.paymentStatus = paymentStatus;
+    if (paymentMethod) {
+      if (paymentMethod === 'prepaid') {
+        query.paymentMethod = { $ne: 'cod' };
+      } else {
+        query.paymentMethod = paymentMethod;
+      }
+    }
     const skip = (Number(page) - 1) * Number(limit);
     const total = await Order.countDocuments(query);
     const orders = await Order.find(query)

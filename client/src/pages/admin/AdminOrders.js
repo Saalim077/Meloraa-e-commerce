@@ -6,23 +6,16 @@ import '../../styles/adminOrders.css';
 
 const fmtINR = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
-const STATUS_TABS = ['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'Refund Requested', 'partially-refunded', 'refunded'];
-const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'Refund Requested', 'partially-refunded', 'refunded'];
+const STATUS_TABS = ['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'Refund Requested', 'refunded'];
+const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'Refund Requested', 'refunded'];
 const PAYMENT_STATUSES = ['pending', 'paid', 'failed', 'refunded'];
-
-const MOCK_ORDERS = [
-  { _id: '1', orderNumber: 'ORD-2024-00123', user: { name: 'Priya Sharma', email: 'priya@gmail.com' }, total: 4299, items: [{}, {}, {}], orderStatus: 'delivered', paymentStatus: 'paid', createdAt: '2024-01-15T10:30:00' },
-  { _id: '2', orderNumber: 'ORD-2024-00122', user: { name: 'Rahul Verma', email: 'rahul@gmail.com' }, total: 1850, items: [{}], orderStatus: 'shipped', paymentStatus: 'paid', createdAt: '2024-01-15T08:20:00' },
-  { _id: '3', orderNumber: 'ORD-2024-00121', user: { name: 'Ananya Iyer', email: 'ananya@gmail.com' }, total: 7620, items: [{}, {}, {}, {}, {}], orderStatus: 'processing', paymentStatus: 'paid', createdAt: '2024-01-14T16:45:00' },
-  { _id: '4', orderNumber: 'ORD-2024-00120', user: { name: 'Karan Mehta', email: 'karan@gmail.com' }, total: 999, items: [{}, {}], orderStatus: 'confirmed', paymentStatus: 'pending', createdAt: '2024-01-14T12:10:00' },
-  { _id: '5', orderNumber: 'ORD-2024-00119', user: { name: 'Meera Nair', email: 'meera@gmail.com' }, total: 3450, items: [{}, {}], orderStatus: 'pending', paymentStatus: 'pending', createdAt: '2024-01-13T09:00:00' },
-  { _id: '6', orderNumber: 'ORD-2024-00118', user: { name: 'Siddharth Das', email: 'sid@gmail.com' }, total: 2100, items: [{}], orderStatus: 'cancelled', paymentStatus: 'failed', createdAt: '2024-01-13T07:30:00' },
-];
+const PAYMENT_METHODS = ['all', 'cod', 'prepaid'];
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [activePaymentMethod, setActivePaymentMethod] = useState('all');
   const [updating, setUpdating] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showRefundModal, setShowRefundModal] = useState(false);
@@ -30,13 +23,16 @@ export default function AdminOrders() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = activeTab !== 'all' ? { status: activeTab } : {};
+      const params = {};
+      if (activeTab !== 'all') params.status = activeTab;
+      if (activePaymentMethod !== 'all') params.paymentMethod = activePaymentMethod;
+      
       const res = await orderAPI.getAll(params);
       setOrders(res.data.orders);
     } catch {
       toast.error('Failed to load orders');
     } finally { setLoading(false); }
-  }, [activeTab]);
+  }, [activeTab, activePaymentMethod]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -55,7 +51,6 @@ export default function AdminOrders() {
       const res = await orderAPI.getOne(orderId);
       setSelectedOrder(res.data.order);
     } catch {
-      // Fallback to local data
       const local = orders.find(o => o._id === orderId);
       setSelectedOrder(local || null);
     }
@@ -88,7 +83,6 @@ export default function AdminOrders() {
   };
 
   const handlePrintLabel = (order) => {
-    // ... exactly same as before ...
     if (!order || !order._id) return toast.error('Order ID missing');
     const addr = order.shippingAddress || {};
     const orderIdStr = order._id.toString();
@@ -150,18 +144,43 @@ export default function AdminOrders() {
   return (
     <div>
       <div className="page-header">
-        <h1>Orders</h1>
-        <p>Manage and track all customer orders</p>
+        <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--maroon)' }}>Order Command Center</h1>
+        <p>Oversee logistics, payment segregation, and customer fulfillment</p>
       </div>
 
-      {/* Status Tabs */}
-      <div className="admin-orders-tabs">
-        {STATUS_TABS.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`admin-orders-tab ${activeTab === tab ? 'active' : ''}`}>
-            {tab.replace('-', ' ')}
-          </button>
-        ))}
+      {/* Control Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px', gap: '20px', flexWrap: 'wrap' }}>
+        {/* Status Tabs */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lifecycle Status</div>
+          <div className="admin-orders-tabs" style={{ marginBottom: 0 }}>
+            {STATUS_TABS.map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`admin-orders-tab ${activeTab === tab ? 'active' : ''}`}>
+                {tab.replace('-', ' ')}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Payment Segregation */}
+        <div style={{ width: '280px' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment Segregation</div>
+          <div style={{ display: 'flex', background: '#f5f5f5', padding: '4px', borderRadius: '8px', border: '1px solid #eee' }}>
+            {PAYMENT_METHODS.map(m => (
+              <button key={m} onClick={() => setActivePaymentMethod(m)}
+                style={{ 
+                  flex: 1, padding: '8px 12px', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer',
+                  background: activePaymentMethod === m ? 'white' : 'transparent',
+                  color: activePaymentMethod === m ? 'var(--maroon)' : '#888',
+                  boxShadow: activePaymentMethod === m ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                  transition: 'all 0.2s'
+                }}>
+                {m.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -170,7 +189,7 @@ export default function AdminOrders() {
         <div className="empty-state">
           <div className="empty-state-icon">🎯</div>
           <div className="empty-state-title">No Orders Found</div>
-          <div className="empty-state-text">No {activeTab !== 'all' ? activeTab : ''} orders at the moment. Try adjusting your filters or check back later.</div>
+          <div className="empty-state-text">No {activeTab !== 'all' ? activeTab : ''} {activePaymentMethod !== 'all' ? activePaymentMethod : ''} orders at the moment.</div>
         </div>
       ) : (
         <div className="table-wrap">
@@ -179,9 +198,9 @@ export default function AdminOrders() {
               <tr>
                 <th>Order #</th>
                 <th>Customer</th>
+                <th>Payment Type</th>
                 <th>Total</th>
-                <th>Items</th>
-                <th>Order Status</th>
+                <th>Status</th>
                 <th>Payment</th>
                 <th>Date</th>
                 <th>Actions</th>
@@ -197,8 +216,18 @@ export default function AdminOrders() {
                     <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>{order.user?.name || '—'}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>{order.user?.email}</div>
                   </td>
+                  <td>
+                    <span style={{ 
+                      fontSize: '0.65rem', fontWeight: '800', padding: '4px 8px', borderRadius: '4px',
+                      background: order.paymentMethod === 'cod' ? 'rgba(176, 90, 0, 0.1)' : 'rgba(30, 125, 50, 0.1)',
+                      color: order.paymentMethod === 'cod' ? '#b05a00' : '#1e7d32',
+                      border: `1px solid ${order.paymentMethod === 'cod' ? 'rgba(176, 90, 0, 0.2)' : 'rgba(30, 125, 50, 0.2)'}`
+                    }}>
+                      {order.paymentMethod === 'cod' ? 'COD' : 'PREPAID'}
+                    </span>
+                    <div style={{ fontSize: '0.6rem', color: '#999', marginTop: '4px' }}>{order.paymentMethod === 'cod' ? 'Cash on Delivery' : (order.paymentMethod?.toUpperCase() || 'ONLINE')}</div>
+                  </td>
                   <td style={{ fontFamily: 'var(--font-mono)', fontWeight: '600' }}>{fmtINR(order.total)}</td>
-                  <td style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>{order.items?.length}</td>
                   <td>
                     <div className="inline-status">
                       <select className="form-input" value={order.orderStatus} onChange={e => handleStatusUpdate(order._id, 'orderStatus', e.target.value)} disabled={updating === order._id}
@@ -235,8 +264,6 @@ export default function AdminOrders() {
       {selectedOrder && (
         <div className="order-modal-overlay" onClick={() => setSelectedOrder(null)}>
           <div className="order-modal" onClick={e => e.stopPropagation()}>
-
-            {/* Modal Header */}
             <div className="order-modal-header">
               <div>
                 <h2 className="order-modal-title">Order Details</h2>
@@ -249,7 +276,6 @@ export default function AdminOrders() {
               </div>
             </div>
 
-            {/* Customer & Shipping Info */}
             <div className="order-modal-info-grid">
               <div className="order-info-card">
                 <div className="order-info-label">Customer</div>
@@ -271,7 +297,6 @@ export default function AdminOrders() {
               </div>
             </div>
 
-            {/* Status Row */}
             <div className="order-status-row">
               <div className="order-status-item">
                 <div className="order-info-label">Order Status</div>
@@ -283,7 +308,7 @@ export default function AdminOrders() {
               </div>
               <div className="order-status-item">
                 <div className="order-info-label">Method</div>
-                <div style={{ fontWeight: '600', textTransform: 'uppercase' }}>{selectedOrder.paymentMethod || 'Card'}</div>
+                <div style={{ fontWeight: '600', textTransform: 'uppercase', color: selectedOrder.paymentMethod === 'cod' ? '#b05a00' : '#1e7d32' }}>{selectedOrder.paymentMethod || 'Prepaid'}</div>
               </div>
             </div>
 
@@ -298,7 +323,6 @@ export default function AdminOrders() {
               </div>
             )}
 
-            {/* Items List */}
             <div className="order-items-list">
               <div className="order-info-label" style={{ marginBottom: '12px' }}>Order Items</div>
               {selectedOrder.items?.map((item, idx) => (
@@ -315,7 +339,6 @@ export default function AdminOrders() {
               ))}
             </div>
 
-            {/* Refund History */}
             {selectedOrder.refunds?.length > 0 && (
               <div style={{ marginTop: '24px', padding: '20px', background: 'var(--bg-lighter)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
                 <div className="order-info-label" style={{ marginBottom: '12px' }}>Refund History</div>
@@ -331,7 +354,6 @@ export default function AdminOrders() {
               </div>
             )}
 
-            {/* Totals */}
             <div className="order-totals-card">
               <div className="order-total-row">
                 <span style={{ color: 'var(--muted)' }}>Subtotal</span><span>{fmtINR(selectedOrder.subtotal)}</span>
