@@ -121,6 +121,19 @@ export default function StoreFront() {
     return 'https://placehold.co/300x300?text=No+Image';
   };
 
+  const getInclusivePrice = (product) => {
+    let price = product.price || 0;
+    if (!settings || !settings.taxEnabled || settings.taxInclusive) return price;
+
+    let rate = settings.taxRate || 0;
+    if (product.taxClass && settings.taxClasses) {
+      const tc = settings.taxClasses.find(c => c.name === product.taxClass);
+      if (tc) rate = tc.rate;
+    }
+
+    return Math.round(price * (1 + rate / 100));
+  };
+
   return (
     <div className="storefront">
       <Header />
@@ -199,11 +212,12 @@ export default function StoreFront() {
                         className="action-btn" 
                         title="Add to Cart"
                         onClick={() => {
+                          const finalPrice = getInclusivePrice(product);
                           dispatch(addToCart({
                             _id: product._id,
                             productId: product._id,
                             name: product.name,
-                            price: product.price,
+                            price: product.price, // Keep base price for checkout extraction if needed, but display is handled by settings
                             image: getProductImage(product),
                           }));
                           dispatch(openCart());
@@ -221,7 +235,7 @@ export default function StoreFront() {
                       <h4 className="product-name">{product.name}</h4>
                     </Link>
                     <p className="product-category">{product.category?.name || 'N/A'}</p>
-                    <p className="product-price">₹{product.price?.toLocaleString?.('en-IN') || product.price || '0'}</p>
+                    <p className="product-price">₹{getInclusivePrice(product).toLocaleString('en-IN')}</p>
                   </div>
                 </div>
               ))}

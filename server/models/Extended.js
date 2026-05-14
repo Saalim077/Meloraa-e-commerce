@@ -50,6 +50,8 @@ const settingsSchema = new mongoose.Schema({
   state: String,
   pincode: String,
   country: { type: String, default: 'India' },
+  gstin: String,
+  pan: String,
 
   // Email Settings
   emailProvider: { type: String, enum: ['smtp', 'sendgrid'], default: 'smtp' },
@@ -75,6 +77,7 @@ const settingsSchema = new mongoose.Schema({
 
   // Tax Settings
   taxEnabled: { type: Boolean, default: true },
+  taxInclusive: { type: Boolean, default: false },
   taxRate: { type: Number, default: 0 },
   taxLabel: { type: String, default: 'GST' },
   taxClasses: [{ name: String, rate: Number }],

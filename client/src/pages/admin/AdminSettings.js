@@ -211,6 +211,82 @@ export default function AdminSettings() {
               />
             </div>
             <div className="form-group">
+              <label>Store Address</label>
+              <input
+                className="form-input"
+                type="text"
+                name="address"
+                value={settings.address || ''}
+                onChange={handleInputChange}
+                placeholder="123 Luxury Lane"
+                readOnly={!isAdmin}
+              />
+            </div>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>City</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  name="city"
+                  value={settings.city || ''}
+                  onChange={handleInputChange}
+                  placeholder="New Delhi"
+                  readOnly={!isAdmin}
+                />
+              </div>
+              <div className="form-group">
+                <label>State</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  name="state"
+                  value={settings.state || ''}
+                  onChange={handleInputChange}
+                  placeholder="Delhi"
+                  readOnly={!isAdmin}
+                />
+              </div>
+              <div className="form-group">
+                <label>Pincode</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  name="pincode"
+                  value={settings.pincode || ''}
+                  onChange={handleInputChange}
+                  placeholder="110001"
+                  readOnly={!isAdmin}
+                />
+              </div>
+            </div>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>GSTIN</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  name="gstin"
+                  value={settings.gstin || ''}
+                  onChange={handleInputChange}
+                  placeholder="22AAAAA0000A1Z5"
+                  readOnly={!isAdmin}
+                />
+              </div>
+              <div className="form-group">
+                <label>PAN</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  name="pan"
+                  value={settings.pan || ''}
+                  onChange={handleInputChange}
+                  placeholder="ABCDE1234F"
+                  readOnly={!isAdmin}
+                />
+              </div>
+            </div>
+            <div className="form-group">
               <label>Store Description</label>
               <textarea
                 className="form-input"
@@ -389,6 +465,24 @@ export default function AdminSettings() {
                 Enable Tax Calculation
               </label>
             </div>
+            {settings.taxEnabled && (
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', background: '#f5f5f5', padding: '12px', borderRadius: '8px', border: '1px solid #eee' }}>
+                  <input
+                    type="checkbox"
+                    name="taxInclusive"
+                    checked={settings.taxInclusive || false}
+                    onChange={handleInputChange}
+                    disabled={!isAdmin}
+                    style={{ width: '18px', height: '18px' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>Prices entered are inclusive of tax</div>
+                    <div style={{ fontSize: '0.75rem', color: '#888' }}>If checked, the product price shown to customers will be the final price. Tax will be extracted for reporting.</div>
+                  </div>
+                </label>
+              </div>
+            )}
             {settings.taxEnabled && (
               <>
                 <div className="form-group">

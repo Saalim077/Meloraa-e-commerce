@@ -23,6 +23,7 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   slug: { type: String, unique: true, lowercase: true },
   sku: { type: String, unique: true },
+  hsnCode: { type: String, default: '' },
   description: String,
   shortDescription: String,
   mainImage: { type: String, default: '' },

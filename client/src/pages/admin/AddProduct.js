@@ -6,7 +6,7 @@ import { productAPI, categoryAPI, uploadAPI, settingsAPI } from '../../utils/api
 const SECTIONS = ['Basic Info', 'Images', 'Pricing', 'Inventory', 'Variants', 'Attributes', 'SEO'];
 
 const defaultForm = {
-  name: '', slug: '', sku: '', brand: '', category: '', shortDescription: '', description: '',
+  name: '', slug: '', sku: '', hsnCode: '', brand: '', category: '', shortDescription: '', description: '',
   tags: [], isActive: true, isFeatured: false, isNewArrival: false, isOnSale: false, taxClass: '',
   mainImage: '', images: [],
   price: '', comparePrice: '', costPrice: '',
@@ -227,6 +227,10 @@ export default function AddProduct() {
                     <label className="form-label">SKU *</label>
                     <input className={`form-input ${errors.sku ? 'error' : ''}`} value={form.sku} onChange={e => set('sku', e.target.value)} placeholder="VSB-001" style={{ fontFamily: 'var(--font-mono)' }} />
                     {errors.sku && <p className="error-msg">{errors.sku}</p>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">HSN Code</label>
+                    <input className="form-input" value={form.hsnCode || ''} onChange={e => set('hsnCode', e.target.value)} placeholder="e.g. 6204" style={{ fontFamily: 'var(--font-mono)' }} />
                   </div>
                 </div>
                 <div className="form-grid">

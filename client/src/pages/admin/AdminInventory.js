@@ -276,11 +276,12 @@ export default function AdminInventory() {
             <thead>
               <tr style={{ background: '#fcfaf8', borderBottom: '2px solid #eee' }}>
                 <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Product & Variations</th>
-                <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Stock Identifier (SKU)</th>
+                <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>SKU</th>
+                <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>HSN</th>
                 <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Category</th>
-                <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Inventory Status</th>
+                <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Stock</th>
                 <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Price</th>
-                <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Market Status</th>
+                <th style={{ padding: '24px', color: '#888', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.85rem' }}>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -298,6 +299,7 @@ export default function AdminInventory() {
                       )}
                     </td>
                     <td style={{ padding: '24px' }}><code style={{ background: '#f5f5f5', padding: '4px 8px', borderRadius: '4px', fontSize: '0.9rem', color: '#555' }}>{p.sku}</code></td>
+                    <td style={{ padding: '24px' }}><code style={{ background: '#fcfaf7', padding: '4px 8px', borderRadius: '4px', fontSize: '0.9rem', color: '#888' }}>{p.hsnCode || '—'}</code></td>
                     <td style={{ padding: '24px', color: '#666', fontWeight: '500' }}>{p.category?.name || 'Uncategorized'}</td>
                     <td style={{ padding: '24px' }}>
                       {p.hasVariants ? (
@@ -345,6 +347,7 @@ export default function AdminInventory() {
                         </div>
                       </td>
                       <td style={{ padding: '16px 24px' }}><code style={{ fontSize: '0.85rem', color: '#888' }}>{v.sku || p.sku}</code></td>
+                      <td style={{ padding: '16px 24px' }}><code style={{ fontSize: '0.85rem', color: '#aaa' }}>{p.hsnCode || '—'}</code></td>
                       <td style={{ padding: '16px 24px', color: '#ccc' }}>—</td>
                       <td style={{ padding: '16px 24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

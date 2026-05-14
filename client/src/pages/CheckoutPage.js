@@ -88,7 +88,14 @@ export default function CheckoutPage() {
         const found = settings.taxClasses.find(c => c.name === item.taxClass);
         if (found) rate = found.rate;
       }
-      calculatedTax += (item.price * item.quantity) * (rate / 100);
+      
+      if (settings.taxInclusive) {
+        // Extract tax: Price * (rate / (100 + rate))
+        calculatedTax += (item.price * item.quantity) * (rate / (100 + rate));
+      } else {
+        // Add tax: Price * (rate / 100)
+        calculatedTax += (item.price * item.quantity) * (rate / 100);
+      }
     });
   }
 
@@ -102,7 +109,7 @@ export default function CheckoutPage() {
     taxMultiplier = taxableAmount / subtotal;
   }
   const tax = settings.taxEnabled ? calculatedTax * taxMultiplier : 0;
-  const total = taxableAmount + tax;
+  const total = settings.taxEnabled && settings.taxInclusive ? taxableAmount : (taxableAmount + tax);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -329,7 +336,7 @@ export default function CheckoutPage() {
 
                 {settings.taxEnabled && (
                   <div className="total-row">
-                    <span>{settings.taxLabel || 'Tax'}:</span>
+                    <span>{settings.taxInclusive ? 'Includes ' : ''}{settings.taxLabel || 'Tax'}:</span>
                     <span>₹{tax.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                   </div>
                 )}

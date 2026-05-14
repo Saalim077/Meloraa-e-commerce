@@ -57,15 +57,38 @@ router.post('/', protect, [
 
       const total = price * item.quantity;
       subtotal += total;
-      orderItems.push({ product: product._id, variant: item.variant, quantity: item.quantity, price, total });
+      
+      let rate = settings.taxRate || 0;
+      if (product.taxClass && settings.taxClasses && Array.isArray(settings.taxClasses)) {
+        const found = settings.taxClasses.find(c => c.name === product.taxClass);
+        if (found) rate = found.rate;
+      }
+
+      let itemSku = product.sku;
+      if (item.variant && product.variants) {
+        const v = product.variants.find(x => x.name === item.variant);
+        if (v && v.sku) itemSku = v.sku;
+      }
+
+      orderItems.push({ 
+        product: product._id, 
+        variant: item.variant, 
+        quantity: item.quantity, 
+        sku: itemSku,
+        hsnCode: product.hsnCode || '', 
+        taxRate: rate,
+        price, 
+        total 
+      });
 
       if (settings.taxEnabled) {
-        let rate = settings.taxRate || 0;
-        if (product.taxClass && settings.taxClasses && Array.isArray(settings.taxClasses)) {
-          const found = settings.taxClasses.find(c => c.name === product.taxClass);
-          if (found) rate = found.rate;
+        if (settings.taxInclusive) {
+          // Extract tax: Price * (rate / (100 + rate))
+          calculatedTax += total * (rate / (100 + rate));
+        } else {
+          // Add tax: Price * (rate / 100)
+          calculatedTax += total * (rate / 100);
         }
-        calculatedTax += total * (rate / 100);
       }
     }
 
@@ -107,8 +130,24 @@ router.post('/', protect, [
     if (subtotal > 0) {
       taxMultiplier = taxableAmount / subtotal;
     }
-    const tax = settings.taxEnabled ? Math.round(calculatedTax * taxMultiplier) : 0;
-    const total = taxableAmount + tax;
+
+    let tax = 0;
+    let finalTotal = taxableAmount;
+
+    if (settings.taxEnabled) {
+      if (settings.taxInclusive) {
+        // Price includes tax, extract it: Tax = Total - (Total / (1 + Rate))
+        // Since we have multiple rates, we sum the extracted tax
+        tax = Math.round(calculatedTax * taxMultiplier);
+        // finalTotal is already correct (subtotal - discount + shipping)
+      } else {
+        // Price is base, add tax on top
+        tax = Math.round(calculatedTax * taxMultiplier);
+        finalTotal = taxableAmount + tax;
+      }
+    }
+
+    const total = finalTotal;
 
     const order = await Order.create({
       user: req.user._id,

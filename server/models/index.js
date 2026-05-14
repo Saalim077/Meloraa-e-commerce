@@ -19,6 +19,9 @@ const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
   variant: String,
   quantity: { type: Number, required: true, min: 1 },
+  hsnCode: String,
+  taxRate: { type: Number, default: 0 },
+  sku: String,
   price: { type: Number, required: true },
   total: { type: Number, required: true },
 });

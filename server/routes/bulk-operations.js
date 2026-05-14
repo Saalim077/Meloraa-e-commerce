@@ -133,16 +133,16 @@ router.delete('/products/bulk', protect, authorize('admin'), [
 // ─── EXPORT Products (CSV) ────────────────────────────────────────────────────
 router.get('/products/export/csv', protect, authorize('admin', 'staff'), async (req, res) => {
   try {
-    const products = await Product.find().select('name sku price stock category isActive hasVariants variants');
+    const products = await Product.find().select('name sku hsnCode price stock category isActive hasVariants variants');
     
-    let csv = 'ID,Name,SKU,Price,Stock,Category,Status,Variant\n';
+    let csv = 'ID,Name,SKU,HSN,Price,Stock,Category,Status,Variant\n';
     for (const p of products) {
       if (p.hasVariants && p.variants && p.variants.length > 0) {
         for (const v of p.variants) {
-          csv += `"${p._id}","${p.name}","${v.sku || p.sku}",${v.price || p.price},${v.stock || 0},"${p.category}","${p.isActive ? 'Active' : 'Inactive'}","${v.name}"\n`;
+          csv += `"${p._id}","${p.name}","${v.sku || p.sku}","${p.hsnCode || ''}",${v.price || p.price},${v.stock || 0},"${p.category}","${p.isActive ? 'Active' : 'Inactive'}","${v.name}"\n`;
         }
       } else {
-        csv += `"${p._id}","${p.name}","${p.sku}",${p.price},${p.stock},"${p.category}","${p.isActive ? 'Active' : 'Inactive'}","-"\n`;
+        csv += `"${p._id}","${p.name}","${p.sku}","${p.hsnCode || ''}",${p.price},${p.stock},"${p.category}","${p.isActive ? 'Active' : 'Inactive'}","-"\n`;
       }
     }
 
@@ -167,14 +167,15 @@ router.post('/products/import/csv', protect, authorize('admin'), [
     const imported = [];
     for (let i = 1; i < lines.length; i++) { // Skip header
       const parts = lines[i].split(',');
-      if (parts.length < 5) continue;
+      if (parts.length < 6) continue;
 
       const product = await Product.create({
         name: parts[1].replace(/"/g, ''),
         sku: parts[2].replace(/"/g, ''),
-        price: parseInt(parts[3]),
-        stock: parseInt(parts[4]),
-        isActive: parts[6] === 'true'
+        hsnCode: parts[3].replace(/"/g, ''),
+        price: parseInt(parts[4]),
+        stock: parseInt(parts[5]),
+        isActive: parts[7] === 'Active'
       });
 
       await createActivityLog(req.user.id, 'create', 'product', product._id);

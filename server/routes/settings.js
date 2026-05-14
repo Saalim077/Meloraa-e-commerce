@@ -34,10 +34,10 @@ router.put('/', protect, authorize('admin'), async (req, res) => {
     // Allowed fields to update
     const allowedFields = [
       'storeName', 'storeDescription', 'logo', 'favicon', 'email', 'phone', 'address',
-      'city', 'state', 'pincode', 'country', 'emailProvider', 'smtpHost', 'smtpPort',
+      'city', 'state', 'pincode', 'country', 'gstin', 'pan', 'emailProvider', 'smtpHost', 'smtpPort',
       'smtpUser', 'smtpPassword', 'stripePublicKey', 'stripeSecretKey',
       'shippingEnabled', 'standardShippingCost', 'freeShippingThreshold', 'shippingZones',
-      'taxEnabled', 'taxRate', 'taxLabel', 'taxClasses', 'itemsPerPage', 'currencySymbol', 'currencyCode', 'timezone',
+      'taxEnabled', 'taxInclusive', 'taxRate', 'taxLabel', 'taxClasses', 'itemsPerPage', 'currencySymbol', 'currencyCode', 'timezone',
       'commonAttributes', 'shopFilters', 'rmaPolicies'
     ];
 

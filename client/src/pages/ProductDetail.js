@@ -23,10 +23,19 @@ export default function ProductDetail() {
   const [activeImage, setActiveImage] = useState('');
   const [activeTab, setActiveTab] = useState('details');
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [settings, setSettings] = useState(null);
 
   useEffect(() => {
     fetchProduct();
+    fetchSettings();
   }, [id]);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await api.get('/settings');
+      setSettings(res.data);
+    } catch (e) { console.error('Settings fetch error', e); }
+  };
 
   useEffect(() => {
     if (product && product.hasVariants && product.variants?.length > 0) {
@@ -132,12 +141,25 @@ export default function ProductDetail() {
     }
   };
 
+  const getInclusivePrice = (priceVal) => {
+    let price = priceVal || 0;
+    if (!settings || !settings.taxEnabled || settings.taxInclusive) return price;
+
+    let rate = settings.taxRate || 0;
+    if (product?.taxClass && settings.taxClasses) {
+      const tc = settings.taxClasses.find(c => c.name === product.taxClass);
+      if (tc) rate = tc.rate;
+    }
+
+    return Math.round(price * (1 + rate / 100));
+  };
+
   if (loading) return <div className="loading-center"><div className="spinner spinner-lg" /></div>;
   if (!product) return <div className="product-detail"><p>Product not found</p></div>;
 
   const isInWishlist = wishlistItems.some(i => i._id === product._id);
-  const displayPrice = selectedVariant ? selectedVariant.price : product.price;
-  const displayComparePrice = selectedVariant ? selectedVariant.comparePrice : (product.comparePrice || 0);
+  const displayPrice = getInclusivePrice(selectedVariant ? selectedVariant.price : product.price);
+  const displayComparePrice = getInclusivePrice(selectedVariant ? selectedVariant.comparePrice : (product.comparePrice || 0));
   const displayStock = selectedVariant ? selectedVariant.stock : product.stock;
   const displaySku = selectedVariant ? selectedVariant.sku || product.sku : product.sku;
 
