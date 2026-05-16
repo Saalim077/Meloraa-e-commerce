@@ -15,22 +15,41 @@ let isConnected = false;
 
 const connectDB = async () => {
   if (isConnected) return;
-  if (!process.env.MONGO_URI) return;
-  try {
-    const db = await mongoose.connect(process.env.MONGO_URI);
-    isConnected = db.connections[0].readyState;
-    console.log('✅ MongoDB connected');
-  } catch (err) {
-    console.error('MongoDB connection failed:', err.message);
-  }
+  if (!process.env.MONGO_URI) throw new Error("MONGO_URI is missing in Vercel Environment Variables");
+  
+  // Connect to DB directly and throw if it fails so the middleware can catch it
+  const db = await mongoose.connect(process.env.MONGO_URI, { 
+    serverSelectionTimeoutMS: 5000 // Timeout fast so Vercel doesn't crash
+  });
+  isConnected = db.connections[0].readyState;
+  console.log('✅ MongoDB connected');
 };
 
 if (process.env.VERCEL) {
   app.use(async (req, res, next) => {
-    await connectDB();
-    next();
+    try {
+      await connectDB();
+      next();
+    } catch (err) {
+      // If DB fails to connect, return the exact error to the browser!
+      console.error('Vercel DB Connection Error:', err);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Database Connection Failed', 
+        errorDetails: err.message 
+      });
+    }
   });
 }
+
+// ─── Diagnostic Route ────────────────────────────────────────────────────────
+app.get('/api/test-db', async (req, res) => {
+  res.json({
+    message: "Diagnostic Route",
+    hasMongoUri: !!process.env.MONGO_URI,
+    isConnected: isConnected
+  });
+});
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
