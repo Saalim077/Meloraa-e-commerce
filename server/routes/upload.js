@@ -6,7 +6,11 @@ const fs = require('fs');
 const { protect, authorize } = require('../middleware/auth');
 
 const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+} catch (err) {
+  console.warn('Vercel read-only filesystem detected, skipping local upload directory creation.');
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
