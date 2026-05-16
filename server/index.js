@@ -25,7 +25,7 @@ const connectDB = async () => {
   console.log('✅ MongoDB connected');
 };
 
-if (process.env.VERCEL) {
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
   app.use(async (req, res, next) => {
     try {
       await connectDB();
@@ -121,7 +121,7 @@ app.use((err, req, res, next) => {
 });
 
 // If running in Vercel Serverless environment
-if (process.env.VERCEL) {
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
   module.exports = app;
 } else {
   // Local development
@@ -136,13 +136,9 @@ if (process.env.VERCEL) {
 
     try {
       await mongoose.connect(process.env.MONGO_URI);
-      console.log('✅ MongoDB connected');
+      console.log('✅ MongoDB connected locally');
     } catch (err) {
-      console.warn('⚠️  MongoDB connection failed:', err.message);
-      if (process.env.NODE_ENV === 'production') {
-        console.error('❌ Cannot start in production without a database. Exiting.');
-        process.exit(1);
-      }
+      console.warn('⚠️  MongoDB connection failed locally:', err.message);
       console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');
     }
 
