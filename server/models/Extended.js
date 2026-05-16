@@ -112,6 +112,29 @@ const settingsSchema = new mongoose.Schema({
     active: { type: Boolean, default: true }
   }],
 
+  // Storefront Controls
+  homepageBanners: [{
+    title: { type: String, default: 'EMBRACE THE ELEGANCE.' },
+    subtitle: { type: String, default: 'NEW COLLECTION \'24' },
+    ctaText: { type: String, default: 'DISCOVER NOW' },
+    ctaLink: { type: String, default: '/shop' },
+    image: { type: String, default: '/images/hero-banner.png' },
+    isActive: { type: Boolean, default: true }
+  }],
+
+  testimonials: [{
+    name: { type: String, required: true },
+    role: { type: String, default: 'Verified Customer' },
+    content: { type: String, required: true },
+    rating: { type: Number, default: 5, min: 1, max: 5 },
+    image: { type: String, default: '' },
+    isActive: { type: Boolean, default: true }
+  }],
+
+  // Tracking & Analytics
+  metaPixelId: { type: String, default: '' },
+  googleAnalyticsId: { type: String, default: '' },
+
 }, { timestamps: true });
 
 const Settings = mongoose.model('Settings', settingsSchema);

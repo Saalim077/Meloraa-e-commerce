@@ -11,17 +11,20 @@ export default function HomePage() {
   const dispatch = useDispatch();
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [settings, setSettings] = useState({});
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, settingsRes] = await Promise.all([
         axios.get('/api/products?limit=8&sort=-createdAt'),
-        axios.get('/api/categories')
+        axios.get('/api/categories'),
+        axios.get('/api/settings')
       ]);
       setFeatured(prodRes.data.products || []);
       setCategories((catRes.data.categories || []).filter(c => !c.parent).slice(0, 4));
+      setSettings(settingsRes.data || {});
     } catch (err) { console.error('Homepage data error:', err.message); }
   };
 
@@ -39,16 +42,30 @@ export default function HomePage() {
       <Header />
 
       {/* ─── Hero Section ───────────────────────────────────────────── */}
-      <section className="home-hero-premium" style={{ backgroundImage: 'url(/images/hero-banner.png)' }}>
-        <div className="hero-overlay-subtle" />
-        <div className="container">
-          <div className="hero-content-premium fade-up">
-            <h1 className="hero-title-premium">EMBRACE<br/>THE ELEGANCE.</h1>
-            <p className="hero-subtitle-premium">NEW COLLECTION '24</p>
-            <Link to="/shop" className="btn btn-maroon hero-cta">DISCOVER NOW</Link>
+      {settings.homepageBanners?.filter(b => b.isActive).map((banner, index) => (
+        <section key={index} className="home-hero-premium" style={{ backgroundImage: `url(${banner.image || '/images/hero-banner.png'})`, display: index === 0 ? 'block' : 'none' }}>
+          <div className="hero-overlay-subtle" />
+          <div className="container">
+            <div className="hero-content-premium fade-up">
+              <h1 className="hero-title-premium" dangerouslySetInnerHTML={{ __html: (banner.title || 'EMBRACE THE ELEGANCE.').replace(/\n/g, '<br/>') }} />
+              <p className="hero-subtitle-premium">{banner.subtitle}</p>
+              <Link to={banner.ctaLink || '/shop'} className="btn btn-maroon hero-cta">{banner.ctaText || 'DISCOVER NOW'}</Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ))}
+      {(!settings.homepageBanners || settings.homepageBanners.filter(b => b.isActive).length === 0) && (
+        <section className="home-hero-premium" style={{ backgroundImage: 'url(/images/hero-banner.png)' }}>
+          <div className="hero-overlay-subtle" />
+          <div className="container">
+            <div className="hero-content-premium fade-up">
+              <h1 className="hero-title-premium">EMBRACE<br/>THE ELEGANCE.</h1>
+              <p className="hero-subtitle-premium">NEW COLLECTION '24</p>
+              <Link to="/shop" className="btn btn-maroon hero-cta">DISCOVER NOW</Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ─── Shop By Category ───────────────────────────────────────── */}
       <section className="section categories-section">
@@ -134,6 +151,38 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ─── Testimonials Section ────────────────────────────────────────── */}
+      {settings.testimonials?.filter(t => t.isActive).length > 0 && (
+        <section className="section testimonials-section" style={{ background: '#fcfaf7', padding: '80px 0' }}>
+          <div className="container">
+            <h2 className="section-title-centered">CLIENT EXPERIENCES</h2>
+            <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', marginTop: '40px' }}>
+              {settings.testimonials.filter(t => t.isActive).map((testimonial, idx) => (
+                <div key={idx} className="testimonial-card" style={{ background: '#fff', padding: '32px', borderRadius: '16px', border: '1px solid #f0ebe4', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <div style={{ color: 'var(--gold)', fontSize: '1.2rem', marginBottom: '16px' }}>
+                    {'★'.repeat(testimonial.rating)}{'☆'.repeat(5 - testimonial.rating)}
+                  </div>
+                  <p style={{ fontStyle: 'italic', color: '#6b665e', marginBottom: '24px', lineHeight: '1.6' }}>"{testimonial.content}"</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
+                    {testimonial.image ? (
+                      <img src={testimonial.image} alt={testimonial.name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f0ebe4', color: 'var(--maroon)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                        {testimonial.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontWeight: '700', color: '#1a1917' }}>{testimonial.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#8c857d' }}>{testimonial.role}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ─── Features Banner ────────────────────────────────────────── */}
       <section className="section-padding container">

@@ -246,6 +246,92 @@ router.get('/conversion-rate', protect, authorize('admin', 'staff'), async (req,
   }
 });
 
+// ─── GET Financial & Tax Report ───────────────────────────────────────────────
+router.get('/financial-report', protect, authorize('admin', 'staff'), async (req, res, next) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+    const filter = { paymentStatus: 'paid' };
+    
+    if (dateFrom || dateTo) {
+      filter.createdAt = {};
+      if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = to;
+      }
+    }
+
+    const [generalStats, hsnStats, rateStats] = await Promise.all([
+      // General financial stats
+      Order.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$total' },
+            totalTax: { $sum: '$tax' },
+            totalShipping: { $sum: '$shipping' },
+            totalDiscount: { $sum: '$discount' },
+            totalSubtotal: { $sum: '$subtotal' },
+            orderCount: { $sum: 1 }
+          }
+        }
+      ]),
+      // HSN-wise breakdown
+      Order.aggregate([
+        { $match: filter },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: '$items.hsnCode',
+            taxableValue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+            gstAmount: { $sum: '$items.total' }, // This total includes its share of tax if stored per item
+            // Actually let's use the taxRate to calculate if not stored explicitly per item
+            calculatedTax: { 
+              $sum: { 
+                $multiply: [
+                  { $multiply: ['$items.price', '$items.quantity'] }, 
+                  { $divide: [{ $ifNull: ['$items.taxRate', 0] }, 100] } 
+                ] 
+              } 
+            },
+            quantity: { $sum: '$items.quantity' }
+          }
+        },
+        { $sort: { taxableValue: -1 } }
+      ]),
+      // Tax Rate breakdown
+      Order.aggregate([
+        { $match: filter },
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: { $ifNull: ['$items.taxRate', 0] },
+            taxableValue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+            taxAmount: { 
+              $sum: { 
+                $multiply: [
+                  { $multiply: ['$items.price', '$items.quantity'] }, 
+                  { $divide: [{ $ifNull: ['$items.taxRate', 0] }, 100] } 
+                ] 
+              } 
+            }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ])
+    ]);
+
+    res.json({
+      success: true,
+      summary: generalStats[0] || { totalRevenue: 0, totalTax: 0, totalShipping: 0, totalSubtotal: 0, orderCount: 0 },
+      hsnBreakdown: hsnStats.map(s => ({ ...s, hsn: s._id || 'N/A' })),
+      taxRateBreakdown: rateStats.map(s => ({ rate: s._id, taxable: s.taxableValue, tax: s.taxAmount }))
+    });
+  } catch (err) { next(err); }
+});
+
 // ─── GET Reviews Analytics ───────────────────────────────────────────────────
 router.get('/reviews-analytics', protect, authorize('admin', 'staff'), async (req, res) => {
   try {

@@ -161,7 +161,7 @@ export default function AdminSettings() {
 
       <div className="tabs-wrapper">
         <div className="tabs">
-          {['general', 'email', 'stripe', 'shipping', 'tax', 'attributes', 'filters', 'rma'].map(t => (
+          {['general', 'storefront', 'email', 'stripe', 'shipping', 'tax', 'attributes', 'filters', 'rma'].map(t => (
             <button
               key={t}
               className={`tab ${tab === t ? 'active' : ''}`}
@@ -863,6 +863,193 @@ export default function AdminSettings() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {tab === 'storefront' && (
+          <div>
+            <h3>Homepage Banners</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '20px' }}>Manage the hero banners displayed on the landing page.</p>
+            
+            {(settings.homepageBanners || []).map((banner, index) => (
+              <div key={index} className="settings-section" style={{ border: '1px solid #f0ebe4', padding: '20px', borderRadius: '12px', marginBottom: '20px', background: '#fcfaf7' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <h4 style={{ margin: 0 }}>Banner #{index + 1}</h4>
+                  <button className="btn btn-sm btn-danger" onClick={() => {
+                    const newBanners = [...(settings.homepageBanners || [])];
+                    newBanners.splice(index, 1);
+                    setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+                  }}>Remove</button>
+                </div>
+                
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Title</label>
+                    <input className="form-input" value={banner.title || ''} onChange={(e) => {
+                      const newBanners = [...settings.homepageBanners];
+                      newBanners[index].title = e.target.value;
+                      setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+                    }} placeholder="EMBRACE THE ELEGANCE." />
+                  </div>
+                  <div className="form-group">
+                    <label>Subtitle</label>
+                    <input className="form-input" value={banner.subtitle || ''} onChange={(e) => {
+                      const newBanners = [...settings.homepageBanners];
+                      newBanners[index].subtitle = e.target.value;
+                      setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+                    }} placeholder="NEW COLLECTION '24" />
+                  </div>
+                  <div className="form-group">
+                    <label>Button Text</label>
+                    <input className="form-input" value={banner.ctaText || ''} onChange={(e) => {
+                      const newBanners = [...settings.homepageBanners];
+                      newBanners[index].ctaText = e.target.value;
+                      setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+                    }} placeholder="DISCOVER NOW" />
+                  </div>
+                  <div className="form-group">
+                    <label>Button Link</label>
+                    <input className="form-input" value={banner.ctaLink || ''} onChange={(e) => {
+                      const newBanners = [...settings.homepageBanners];
+                      newBanners[index].ctaLink = e.target.value;
+                      setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+                    }} placeholder="/shop" />
+                  </div>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>Image URL (or path)</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input className="form-input" value={banner.image || ''} onChange={(e) => {
+                        const newBanners = [...settings.homepageBanners];
+                        newBanners[index].image = e.target.value;
+                        setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+                      }} placeholder="/images/hero-banner.png" style={{ flex: 1 }} />
+                    </div>
+                    {banner.image && <img src={banner.image} alt="Banner Preview" style={{ marginTop: '10px', maxHeight: '100px', borderRadius: '8px', border: '1px solid #ccc' }} />}
+                  </div>
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" checked={banner.isActive !== false} onChange={(e) => {
+                        const newBanners = [...settings.homepageBanners];
+                        newBanners[index].isActive = e.target.checked;
+                        setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+                      }} />
+                      Active (Visible on homepage)
+                    </label>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            <button className="btn btn-outline" onClick={() => {
+              setSettings(prev => ({
+                ...prev,
+                homepageBanners: [...(prev.homepageBanners || []), { title: '', subtitle: '', ctaText: '', ctaLink: '', image: '', isActive: true }]
+              }));
+            }}>+ Add Banner</button>
+
+            <hr style={{ margin: '40px 0', borderTop: '1px solid #f0ebe4' }} />
+
+            <h3>Testimonials & Reviews</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '20px' }}>Manage the testimonials that appear on the storefront.</p>
+            
+            {(settings.testimonials || []).map((t, index) => (
+              <div key={index} className="settings-section" style={{ border: '1px solid #f0ebe4', padding: '20px', borderRadius: '12px', marginBottom: '20px', background: '#fcfaf7' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <h4 style={{ margin: 0 }}>Testimonial #{index + 1}</h4>
+                  <button className="btn btn-sm btn-danger" onClick={() => {
+                    const newT = [...(settings.testimonials || [])];
+                    newT.splice(index, 1);
+                    setSettings(prev => ({ ...prev, testimonials: newT }));
+                  }}>Remove</button>
+                </div>
+                
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Customer Name</label>
+                    <input className="form-input" value={t.name || ''} onChange={(e) => {
+                      const newT = [...settings.testimonials];
+                      newT[index].name = e.target.value;
+                      setSettings(prev => ({ ...prev, testimonials: newT }));
+                    }} placeholder="Jane Doe" />
+                  </div>
+                  <div className="form-group">
+                    <label>Role / Title</label>
+                    <input className="form-input" value={t.role || ''} onChange={(e) => {
+                      const newT = [...settings.testimonials];
+                      newT[index].role = e.target.value;
+                      setSettings(prev => ({ ...prev, testimonials: newT }));
+                    }} placeholder="Verified Customer" />
+                  </div>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>Quote Content</label>
+                    <textarea className="form-input" rows="3" value={t.content || ''} onChange={(e) => {
+                      const newT = [...settings.testimonials];
+                      newT[index].content = e.target.value;
+                      setSettings(prev => ({ ...prev, testimonials: newT }));
+                    }} placeholder="Absolutely love the quality..." />
+                  </div>
+                  <div className="form-group">
+                    <label>Rating (1-5)</label>
+                    <input className="form-input" type="number" min="1" max="5" value={t.rating || 5} onChange={(e) => {
+                      const newT = [...settings.testimonials];
+                      newT[index].rating = Number(e.target.value);
+                      setSettings(prev => ({ ...prev, testimonials: newT }));
+                    }} />
+                  </div>
+                  <div className="form-group">
+                    <label>Avatar URL (Optional)</label>
+                    <input className="form-input" value={t.image || ''} onChange={(e) => {
+                      const newT = [...settings.testimonials];
+                      newT[index].image = e.target.value;
+                      setSettings(prev => ({ ...prev, testimonials: newT }));
+                    }} placeholder="/images/avatar-1.png" />
+                  </div>
+                  <div className="form-group">
+                    <label className="checkbox-label">
+                      <input type="checkbox" checked={t.isActive !== false} onChange={(e) => {
+                        const newT = [...settings.testimonials];
+                        newT[index].isActive = e.target.checked;
+                        setSettings(prev => ({ ...prev, testimonials: newT }));
+                      }} />
+                      Active (Visible on homepage)
+                    </label>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            <button className="btn btn-outline" onClick={() => {
+              setSettings(prev => ({
+                ...prev,
+                testimonials: [...(prev.testimonials || []), { name: '', role: 'Verified Customer', content: '', rating: 5, image: '', isActive: true }]
+              }));
+            }}>+ Add Testimonial</button>
+
+            <hr style={{ margin: '40px 0', borderTop: '1px solid #f0ebe4' }} />
+
+            <h3>Tracking & Analytics</h3>
+            <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '20px' }}>Integrate external tracking codes like Meta (Facebook) Pixel and Google Analytics.</p>
+
+            <div className="settings-section" style={{ border: '1px solid #f0ebe4', padding: '20px', borderRadius: '12px', background: '#fcfaf7' }}>
+              <div className="form-grid">
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Meta (Facebook) Pixel ID</label>
+                  <input className="form-input" value={settings.metaPixelId || ''} onChange={(e) => {
+                    setSettings(prev => ({ ...prev, metaPixelId: e.target.value }));
+                  }} placeholder="e.g. 123456789012345" readOnly={!isAdmin} />
+                  <span style={{ fontSize: '0.75rem', color: '#8c857d', marginTop: '4px', display: 'block' }}>Enter your 15-digit pixel ID to track page views and events.</span>
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>Google Analytics Tracking ID</label>
+                  <input className="form-input" value={settings.googleAnalyticsId || ''} onChange={(e) => {
+                    setSettings(prev => ({ ...prev, googleAnalyticsId: e.target.value }));
+                  }} placeholder="e.g. G-XXXXXXXXXX or UA-XXXXXXXXX-X" readOnly={!isAdmin} />
+                  <span style={{ fontSize: '0.75rem', color: '#8c857d', marginTop: '4px', display: 'block' }}>Enter your Google Analytics measurement ID.</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 

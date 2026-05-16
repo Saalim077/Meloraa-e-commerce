@@ -55,4 +55,22 @@ router.delete('/:id', protect, authorize('admin'), [
   } catch (err) { next(err); }
 });
 
+router.get('/:id/details', protect, authorize('admin', 'staff'), async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const { Order } = require('../models/index');
+    const orders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).populate('items.product', 'name images');
+    
+    const stats = {
+      orderCount: orders.length,
+      totalSpent: orders.filter(o => o.paymentStatus === 'paid').reduce((sum, o) => sum + o.total, 0),
+      lastOrder: orders[0] ? orders[0].createdAt : null,
+    };
+
+    res.json({ success: true, user, orders, stats });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

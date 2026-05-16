@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
 import { fetchMe } from './store';
+import { settingsAPI } from './utils/api';
 
 // Public pages
 import HomePage from './pages/HomePage';
@@ -38,6 +39,8 @@ import AdminReturnDetail from './pages/admin/AdminReturnDetail';
 import AdminActivityLogs from './pages/admin/AdminActivityLogs';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminReviews from './pages/admin/AdminReviews';
+import AdminFinancials from './pages/admin/AdminFinancials';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 // Auth pages
 import LoginPage from './pages/LoginPage';
@@ -65,7 +68,43 @@ const ProtectedUser = ({ children }) => {
 
 export default function App() {
   const dispatch = useDispatch();
-  useEffect(() => { dispatch(fetchMe()); }, [dispatch]);
+  
+  useEffect(() => { 
+    dispatch(fetchMe()); 
+    
+    // Inject Tracking Scripts
+    settingsAPI.getSettings().then(res => {
+      const { metaPixelId, googleAnalyticsId } = res.data || {};
+      
+      // Inject Meta Pixel
+      if (metaPixelId && !window.fbq) {
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        window.fbq('init', metaPixelId);
+        window.fbq('track', 'PageView');
+      }
+
+      // Inject Google Analytics
+      if (googleAnalyticsId && !window.gtag) {
+        const script = document.createElement('script');
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`;
+        script.async = true;
+        document.head.appendChild(script);
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){window.dataLayer.push(arguments);}
+        window.gtag = gtag; // attach to window to avoid undefined errors
+        gtag('js', new Date());
+        gtag('config', googleAnalyticsId);
+      }
+    }).catch(err => console.error('Failed to load tracking settings:', err.message));
+  }, [dispatch]);
 
   const { open: isCartOpen } = useSelector(s => s.cart);
 
@@ -114,6 +153,8 @@ export default function App() {
           <Route path="activity-logs" element={<AdminActivityLogs />} />
           <Route path="inventory" element={<AdminInventory />} />
           <Route path="reviews" element={<AdminReviews />} />
+          <Route path="financials" element={<AdminFinancials />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
         </Route>
 
         {/* Fallback */}

@@ -14,6 +14,8 @@ const NAV = [
   { to: '/admin/coupons', label: 'Coupons', icon: '◇' },
   { to: '/admin/users', label: 'Users', icon: '◉' },
   { to: '/admin/returns', label: 'Returns', icon: '↩' },
+  { to: '/admin/financials', label: 'Financials', icon: '₹' },
+  { to: '/admin/analytics', label: 'Insights', icon: '📈' },
   { to: '/admin/activity-logs', label: 'Activity Logs', icon: '📜' },
   { to: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ];
@@ -38,7 +40,7 @@ export default function AdminLayout() {
       <aside className="admin-sidebar" style={{ display: mobileOpen || window.innerWidth > 768 ? 'flex' : 'none', flexDirection: 'column' }}>
         {/* Logo */}
         <div style={{ padding: '28px 24px 20px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: '700', color: 'var(--gold)', letterSpacing: '0.1em' }}>LUXESTORE</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: '700', color: 'var(--gold)', letterSpacing: '0.1em' }}>MELORAA</div>
           <div style={{ fontSize: '0.65rem', color: 'var(--muted)', letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: '2px' }}>Admin Console</div>
         </div>
 

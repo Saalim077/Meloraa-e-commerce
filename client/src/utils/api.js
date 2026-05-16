@@ -82,6 +82,7 @@ export const analyticsAPI = {
   productPerformance: () => api.get('/analytics/product-performance'),
   conversionRate: (params) => api.get('/analytics/conversion-rate', { params }),
   reviewsAnalytics: () => api.get('/analytics/reviews-analytics'),
+  financialReport: (params) => api.get('/analytics/financial-report', { params }),
   exportReport: () => api.get('/analytics/export/report'),
 };
 
@@ -121,6 +122,7 @@ export const bulkAPI = {
 
 export const userAdminAPI = {
   getAll: (params) => api.get('/users', { params }),
+  getDetails: (id) => api.get(`/users/${id}/details`),
   updateStatus: (id, status) => api.put(`/users/${id}/status`, { status }),
   updateRole: (id, role) => api.put(`/users/${id}/role`, { role }),
   remove: (id) => api.delete(`/users/${id}`),
