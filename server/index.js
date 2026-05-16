@@ -80,31 +80,56 @@ app.use((err, req, res, next) => {
 });
 
 // ─── MongoDB Connect ──────────────────────────────────────────────────────────
-const startServer = async () => {
-  const PORT = process.env.PORT || 5000;
+let isConnected = false;
 
-  if (!process.env.JWT_SECRET) {
-    console.error('❌ FATAL: JWT_SECRET environment variable is not set.');
-    console.error('   Set JWT_SECRET in server/.env before starting the server.');
-    process.exit(1);
-  }
-
+const connectDB = async () => {
+  if (isConnected) return;
+  if (!process.env.MONGO_URI) return;
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    const db = await mongoose.connect(process.env.MONGO_URI);
+    isConnected = db.connections[0].readyState;
     console.log('✅ MongoDB connected');
   } catch (err) {
-    console.warn('⚠️  MongoDB connection failed:', err.message);
-    if (process.env.NODE_ENV === 'production') {
-      console.error('❌ Cannot start in production without a database. Exiting.');
-      process.exit(1);
-    }
-    console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');
+    console.error('MongoDB connection failed:', err.message);
   }
-
-  app.listen(PORT, () => {
-    console.log(`🚀 LuxeStore API running on http://localhost:${PORT}`);
-    console.log(`📊 Admin: http://localhost:3000/admin`);
-  });
 };
 
-startServer();
+// If running in Vercel Serverless environment
+if (process.env.VERCEL) {
+  // Connect DB on each serverless invocation
+  app.use(async (req, res, next) => {
+    await connectDB();
+    next();
+  });
+  module.exports = app;
+} else {
+  // Local development
+  const startServer = async () => {
+    const PORT = process.env.PORT || 5000;
+
+    if (!process.env.JWT_SECRET) {
+      console.error('❌ FATAL: JWT_SECRET environment variable is not set.');
+      console.error('   Set JWT_SECRET in server/.env before starting the server.');
+      process.exit(1);
+    }
+
+    try {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log('✅ MongoDB connected');
+    } catch (err) {
+      console.warn('⚠️  MongoDB connection failed:', err.message);
+      if (process.env.NODE_ENV === 'production') {
+        console.error('❌ Cannot start in production without a database. Exiting.');
+        process.exit(1);
+      }
+      console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');
+    }
+
+    app.listen(PORT, () => {
+      console.log(`🚀 LuxeStore API running on http://localhost:${PORT}`);
+      console.log(`📊 Admin: http://localhost:3000/admin`);
+    });
+  };
+
+  startServer();
+}
