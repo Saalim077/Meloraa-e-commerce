@@ -10,6 +10,28 @@ require('dotenv').config();
 
 const app = express();
 
+// ─── Vercel Serverless DB Connection ──────────────────────────────────────────
+let isConnected = false;
+
+const connectDB = async () => {
+  if (isConnected) return;
+  if (!process.env.MONGO_URI) return;
+  try {
+    const db = await mongoose.connect(process.env.MONGO_URI);
+    isConnected = db.connections[0].readyState;
+    console.log('✅ MongoDB connected');
+  } catch (err) {
+    console.error('MongoDB connection failed:', err.message);
+  }
+};
+
+if (process.env.VERCEL) {
+  app.use(async (req, res, next) => {
+    await connectDB();
+    next();
+  });
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.set('trust proxy', 1);
 app.use((req, res, next) => {
@@ -79,28 +101,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ─── MongoDB Connect ──────────────────────────────────────────────────────────
-let isConnected = false;
-
-const connectDB = async () => {
-  if (isConnected) return;
-  if (!process.env.MONGO_URI) return;
-  try {
-    const db = await mongoose.connect(process.env.MONGO_URI);
-    isConnected = db.connections[0].readyState;
-    console.log('✅ MongoDB connected');
-  } catch (err) {
-    console.error('MongoDB connection failed:', err.message);
-  }
-};
-
 // If running in Vercel Serverless environment
 if (process.env.VERCEL) {
-  // Connect DB on each serverless invocation
-  app.use(async (req, res, next) => {
-    await connectDB();
-    next();
-  });
   module.exports = app;
 } else {
   // Local development
