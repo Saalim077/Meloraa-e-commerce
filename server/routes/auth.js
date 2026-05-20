@@ -41,8 +41,8 @@ const sendToken = (res, user, statusCode = 200) => {
   const token = signToken(user._id);
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true, // Must be true for sameSite: 'none'
+    sameSite: 'none', // Required for cross-site cookie sharing (Vercel to Render)
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   res.status(statusCode).json({ success: true, user });
@@ -214,7 +214,12 @@ router.put('/change-password', protect, [
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.cookie('token', '', { maxAge: 0 });
+  res.cookie('token', '', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    expires: new Date(0),
+  });
   res.json({ success: true, message: 'Logged out' });
 });
 
