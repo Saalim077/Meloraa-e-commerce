@@ -128,7 +128,7 @@ if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
 } else {
   // Local development
   const startServer = async () => {
-    const PORT = process.env.PORT || 5001;
+    const PORT = process.env.PORT || 5000;
 
     if (!process.env.JWT_SECRET) {
       console.error('❌ FATAL: JWT_SECRET environment variable is not set.');
