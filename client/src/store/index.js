@@ -30,14 +30,25 @@ const authSlice = createSlice({
       b.addCase(thunk.fulfilled, (s, a) => {
         s.loading = false;
         if (a.payload?.user) s.user = a.payload.user;
+        if (a.payload?.token) {
+          localStorage.setItem('token', a.payload.token);
+        }
         if (thunk === logoutUser) { 
           s.user = null; 
+          localStorage.removeItem('token');
           localStorage.removeItem('cart');
           localStorage.removeItem('wishlist');
         }
         if (thunk === fetchMe) { s.user = a.payload?.user || null; s.initialized = true; }
       });
-      b.addCase(thunk.rejected, (s, a) => { s.loading = false; s.error = a.payload; if (thunk === fetchMe) s.initialized = true; });
+      b.addCase(thunk.rejected, (s, a) => { 
+        s.loading = false; 
+        s.error = a.payload; 
+        if (thunk === fetchMe) {
+          s.initialized = true; 
+          localStorage.removeItem('token');
+        }
+      });
     };
     [loginUser, registerUser, fetchMe, logoutUser, updateProfile, verifyRegister].forEach(handle);
   },
