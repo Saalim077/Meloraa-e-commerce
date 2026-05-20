@@ -123,11 +123,11 @@ app.use((err, req, res, next) => {
 });
 
 // If running in Vercel Serverless environment
-if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+if (process.env.VERCEL) {
   module.exports = app;
 } else {
-  // Local development
-  const startServer = async () => {
+  // Local development or Render hosting
+  const startServer = () => {
     const PORT = process.env.PORT || 5000;
 
     if (!process.env.JWT_SECRET) {
@@ -136,16 +136,15 @@ if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
       process.exit(1);
     }
 
-    try {
-      await mongoose.connect(process.env.MONGO_URI);
-      console.log('✅ MongoDB connected locally');
-    } catch (err) {
-      console.warn('⚠️  MongoDB connection failed locally:', err.message);
-      console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');
-    }
+    // Connect to MongoDB in the background (non-blocking)
+    mongoose.connect(process.env.MONGO_URI)
+      .then(() => console.log('✅ MongoDB connected successfully'))
+      .catch((err) => {
+        console.warn('⚠️  MongoDB connection failed:', err.message);
+        console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');
+      });
 
-    // Trigger nodemon restart comment
-
+    // Start listening immediately so Render detects the port instantly
     app.listen(PORT, () => {
       console.log(`🚀 LuxeStore API running on http://localhost:${PORT}`);
       console.log(`📊 Admin: http://localhost:3000/admin`);
