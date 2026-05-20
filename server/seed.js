@@ -70,7 +70,7 @@ const seed = async () => {
       p.slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       p.meta = { views: Math.floor(Math.random() * 500), purchases: Math.floor(Math.random() * 100), ratings: [], averageRating: (3.5 + Math.random() * 1.5).toFixed(1) };
     }
-    await Product.insertMany(products);
+    const createdProducts = await Product.insertMany(products);
     console.log('📦 20 products created');
 
     // Coupons
@@ -100,7 +100,7 @@ const seed = async () => {
     // Sample Orders
     const order1 = await Order.create({
       user: customer._id,
-      items: [{ product: products[0]._id, quantity: 1, price: 8500, total: 8500 }],
+      items: [{ product: createdProducts[0]._id, quantity: 1, price: 8500, total: 8500 }],
       subtotal: 8500, total: 8500,
       orderStatus: 'delivered', paymentStatus: 'paid',
       shippingAddress: customer.addresses[0],
@@ -110,7 +110,7 @@ const seed = async () => {
 
     const order2 = await Order.create({
       user: customer._id,
-      items: [{ product: products[1]._id, quantity: 1, price: 15000, total: 15000 }],
+      items: [{ product: createdProducts[1]._id, quantity: 1, price: 15000, total: 15000 }],
       subtotal: 15000, total: 15000,
       orderStatus: 'delivered', paymentStatus: 'paid',
       shippingAddress: customer.addresses[0],
