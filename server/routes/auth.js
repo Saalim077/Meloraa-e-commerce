@@ -45,7 +45,7 @@ const sendToken = (res, user, statusCode = 200) => {
     sameSite: 'none', // Required for cross-site cookie sharing (Vercel to Render)
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
-  res.status(statusCode).json({ success: true, user });
+  res.status(statusCode).json({ success: true, user, token });
 };
 
 // POST /api/auth/register
