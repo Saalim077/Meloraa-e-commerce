@@ -17,6 +17,9 @@ export const logoutUser = createAsyncThunk('auth/logout', async () => {
 export const updateProfile = createAsyncThunk('auth/updateProfile', async (data, { rejectWithValue }) => {
   try { const res = await authAPI.updateProfile(data); return res.data; } catch (e) { return rejectWithValue(e.response?.data?.message); }
 });
+export const verifyRegister = createAsyncThunk('auth/verifyRegister', async (data, { rejectWithValue }) => {
+  try { const res = await authAPI.verifyRegister(data); return res.data; } catch (e) { return rejectWithValue(e.response?.data?.message || 'Verification failed'); }
+});
 
 const authSlice = createSlice({
   name: 'auth', initialState: { user: null, loading: false, error: null, initialized: false },
@@ -27,12 +30,16 @@ const authSlice = createSlice({
       b.addCase(thunk.fulfilled, (s, a) => {
         s.loading = false;
         if (a.payload?.user) s.user = a.payload.user;
-        if (thunk === logoutUser) { s.user = null; }
+        if (thunk === logoutUser) { 
+          s.user = null; 
+          localStorage.removeItem('cart');
+          localStorage.removeItem('wishlist');
+        }
         if (thunk === fetchMe) { s.user = a.payload?.user || null; s.initialized = true; }
       });
       b.addCase(thunk.rejected, (s, a) => { s.loading = false; s.error = a.payload; if (thunk === fetchMe) s.initialized = true; });
     };
-    [loginUser, registerUser, fetchMe, logoutUser, updateProfile].forEach(handle);
+    [loginUser, registerUser, fetchMe, logoutUser, updateProfile, verifyRegister].forEach(handle);
   },
 });
 
@@ -45,7 +52,8 @@ const cartSlice = createSlice({
   reducers: {
     addToCart: (s, a) => {
       const { quantity = 1 } = a.payload;
-      const existing = s.items.find(i => i._id === a.payload._id);
+      // Fix #11: Match on BOTH product _id AND variant to keep variants as separate rows
+      const existing = s.items.find(i => i._id === a.payload._id && i.variant === a.payload.variant);
       if (existing) {
         existing.quantity = Math.min(existing.quantity + quantity, a.payload.stock || 99);
       } else {
@@ -53,12 +61,22 @@ const cartSlice = createSlice({
       }
       saveCart(s.items);
     },
-    removeFromCart: (s, a) => { s.items = s.items.filter(i => i._id !== a.payload); saveCart(s.items); },
+    removeFromCart: (s, a) => {
+      // Accept either a plain ID string or an object {_id, variant}
+      const id = typeof a.payload === 'string' ? a.payload : a.payload._id;
+      const variant = typeof a.payload === 'string' ? undefined : a.payload.variant;
+      if (variant !== undefined) {
+        s.items = s.items.filter(i => !(i._id === id && i.variant === variant));
+      } else {
+        s.items = s.items.filter(i => i._id !== id);
+      }
+      saveCart(s.items);
+    },
     updateQty: (s, a) => {
-      const item = s.items.find(i => i._id === a.payload.id);
+      const item = s.items.find(i => i._id === a.payload.id && i.variant === a.payload.variant);
       if (item) {
         item.quantity = a.payload.qty;
-        if (item.quantity <= 0) s.items = s.items.filter(i => i._id !== a.payload.id);
+        if (item.quantity <= 0) s.items = s.items.filter(i => !(i._id === a.payload.id && i.variant === a.payload.variant));
       }
       saveCart(s.items);
     },
@@ -94,8 +112,8 @@ const productsSlice = createSlice({
 export const createOrder = createAsyncThunk('orders/create', async (data, { rejectWithValue }) => {
   try { const res = await orderAPI.create(data); return res.data; } catch (e) { return rejectWithValue(e.response?.data?.message); }
 });
-export const fetchMyOrders = createAsyncThunk('orders/myOrders', async () => {
-  const res = await orderAPI.myOrders(); return res.data;
+export const fetchMyOrders = createAsyncThunk('orders/myOrders', async (params) => {
+  const res = await orderAPI.myOrders(params); return res.data;
 });
 export const fetchAllOrders = createAsyncThunk('orders/allOrders', async (params) => {
   const res = await orderAPI.getAll(params); return res.data;
@@ -105,13 +123,15 @@ export const cancelOrder = createAsyncThunk('orders/cancel', async (id, { reject
 });
 
 const ordersSlice = createSlice({
-  name: 'orders', initialState: { myOrders: [], allOrders: [], lastOrder: null, loading: false },
+  name: 'orders', initialState: { myOrders: [], myOrdersPagination: null, allOrders: [], lastOrder: null, loading: false },
   reducers: {},
   extraReducers: (b) => {
     b.addCase(createOrder.pending, (s) => { s.loading = true; });
     b.addCase(createOrder.fulfilled, (s, a) => { s.loading = false; s.lastOrder = a.payload.order; });
     b.addCase(createOrder.rejected, (s) => { s.loading = false; });
-    b.addCase(fetchMyOrders.fulfilled, (s, a) => { s.myOrders = a.payload.orders; });
+    b.addCase(fetchMyOrders.pending, (s) => { s.loading = true; });
+    b.addCase(fetchMyOrders.fulfilled, (s, a) => { s.loading = false; s.myOrders = a.payload.orders; s.myOrdersPagination = a.payload.pagination; });
+    b.addCase(fetchMyOrders.rejected, (s) => { s.loading = false; });
     b.addCase(fetchAllOrders.fulfilled, (s, a) => { s.allOrders = a.payload.orders; });
     b.addCase(cancelOrder.fulfilled, (s, a) => {
       const idx = s.myOrders.findIndex(o => o._id === a.payload.order._id);
@@ -135,18 +155,38 @@ const categoriesSlice = createSlice({
   },
 });
 
-// ─── Wishlist Slice ───────────────────────────────────────────────────────────
+// Fix #7: Wishlist now syncs with the server
+export const toggleWishlistItem = createAsyncThunk('wishlist/toggle', async (product, { rejectWithValue }) => {
+  try {
+    await authAPI.toggleWishlist(product._id);
+    return product;
+  } catch (e) { return rejectWithValue(e.response?.data?.message); }
+});
+
 const loadWishlist = () => { try { return JSON.parse(localStorage.getItem('wishlist')) || []; } catch { return []; } };
 const wishlistSlice = createSlice({
   name: 'wishlist', initialState: { items: loadWishlist() },
   reducers: {
+    // Keep local-only toggle as a fallback for non-logged-in usage
     toggleWishlist: (s, a) => {
       const idx = s.items.findIndex(i => i._id === a.payload._id);
       if (idx > -1) s.items.splice(idx, 1);
       else s.items.push(a.payload);
       localStorage.setItem('wishlist', JSON.stringify(s.items));
     },
+    setWishlist: (s, a) => {
+      s.items = a.payload;
+      localStorage.setItem('wishlist', JSON.stringify(s.items));
+    },
     clearWishlist: (s) => { s.items = []; localStorage.removeItem('wishlist'); },
+  },
+  extraReducers: (b) => {
+    b.addCase(toggleWishlistItem.fulfilled, (s, a) => {
+      const idx = s.items.findIndex(i => i._id === a.payload._id);
+      if (idx > -1) s.items.splice(idx, 1);
+      else s.items.push(a.payload);
+      localStorage.setItem('wishlist', JSON.stringify(s.items));
+    });
   },
 });
 
@@ -166,7 +206,8 @@ const analyticsSlice = createSlice({
 
 export const { clearError } = authSlice.actions;
 export const { addToCart, removeFromCart, updateQty, clearCart, toggleCart, openCart, closeCart } = cartSlice.actions;
-export const { toggleWishlist, clearWishlist } = wishlistSlice.actions;
+export const { toggleWishlist, setWishlist, clearWishlist } = wishlistSlice.actions;
+
 
 // ─── Returns Slice ────────────────────────────────────────────────────────────
 export const createReturn = createAsyncThunk('returns/create', async (data, { rejectWithValue }) => {

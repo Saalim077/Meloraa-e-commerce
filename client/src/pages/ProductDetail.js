@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
-import { toggleWishlist, addToCart, openCart } from '../store';
+import { toggleWishlistItem, addToCart, openCart } from '../store';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../styles/product-detail.css';
@@ -157,6 +157,10 @@ export default function ProductDetail() {
   if (loading) return <div className="loading-center"><div className="spinner spinner-lg" /></div>;
   if (!product) return <div className="product-detail"><p>Product not found</p></div>;
 
+  const handleWishlist = () => {
+    if (!user) { toast.error('Please login to save items'); return; }
+    dispatch(toggleWishlistItem({ _id: product._id, name: product.name, images: product.images }));
+  };
   const isInWishlist = wishlistItems.some(i => i._id === product._id);
   const displayPrice = getInclusivePrice(selectedVariant ? selectedVariant.price : product.price);
   const displayComparePrice = getInclusivePrice(selectedVariant ? selectedVariant.comparePrice : (product.comparePrice || 0));
@@ -288,7 +292,7 @@ export default function ProductDetail() {
             </div>
 
             <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-              <button onClick={() => dispatch(toggleWishlist(product))} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button onClick={handleWishlist} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {isInWishlist ? '❤️' : '🤍'} Add to Wishlist
               </button>
             </div>

@@ -43,11 +43,9 @@ const sendEmail = async ({ to, subject, html }) => {
       html 
     });
 
-    console.log(`Email sent to ${to}`);
-    require('fs').appendFileSync('email-debug.log', `[${new Date().toISOString()}] SUCCESS: Email sent to ${to}\n`);
+    console.log(`[EMAIL] SUCCESS: Email sent to ${to}`);
   } catch (err) {
-    console.error('Email send failed:', err.message);
-    require('fs').appendFileSync('email-debug.log', `[${new Date().toISOString()}] ERROR: ${err.message}\n`);
+    console.error('[EMAIL] Failed:', err.message);
   }
 };
 

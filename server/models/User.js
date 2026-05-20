@@ -28,10 +28,12 @@ const userSchema = new mongoose.Schema({
   addresses: [addressSchema],
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
   emailVerified: { type: Boolean, default: false },
-  status: { type: String, enum: ['active', 'blocked'], default: 'active' },
+  status: { type: String, enum: ['active', 'blocked', 'pending'], default: 'active' },
   lastLogin: { type: Date },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
+  otp: { type: String, select: false },
+  otpExpire: { type: Date, select: false },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
@@ -44,9 +46,15 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+userSchema.methods.compareOtp = async function (enteredOtp) {
+  if (!this.otp) return false;
+  return await bcrypt.compare(enteredOtp, this.otp);
+};
+
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.otp;
   return obj;
 };
 

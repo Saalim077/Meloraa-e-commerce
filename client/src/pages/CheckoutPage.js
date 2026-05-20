@@ -31,6 +31,7 @@ export default function CheckoutPage() {
     paymentMethod: 'cod'
   });
 
+  const [selectedAddressId, setSelectedAddressId] = useState('');
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discount, setDiscount] = useState(0);
@@ -47,6 +48,63 @@ export default function CheckoutPage() {
     };
     fetchSettings();
   }, []);
+
+  // Prefill default or selected address
+  useEffect(() => {
+    if (user) {
+      const defaultAddr = user.addresses?.find(a => a.isDefault) || user.addresses?.[0];
+      if (defaultAddr) {
+        setSelectedAddressId(defaultAddr._id);
+        setFormData(prev => ({
+          ...prev,
+          firstName: defaultAddr.firstName || user.name?.split(' ')[0] || '',
+          lastName: defaultAddr.lastName || user.name?.split(' ')[1] || '',
+          email: user.email || '',
+          phone: defaultAddr.phone || user.phone || '',
+          address: defaultAddr.address || defaultAddr.addressLine1 || '',
+          city: defaultAddr.city || '',
+          state: defaultAddr.state || '',
+          zipCode: defaultAddr.zipCode || defaultAddr.pincode || '',
+        }));
+      } else {
+        setSelectedAddressId('new');
+        setFormData(prev => ({
+          ...prev,
+          firstName: user.name?.split(' ')[0] || '',
+          lastName: user.name?.split(' ')[1] || '',
+          email: user.email || '',
+          phone: user.phone || '',
+        }));
+      }
+    }
+  }, [user]);
+
+  const handleAddressSelect = (addrId) => {
+    setSelectedAddressId(addrId);
+    if (addrId === 'new') {
+      setFormData(prev => ({
+        ...prev,
+        address: '',
+        city: '',
+        state: '',
+        zipCode: ''
+      }));
+    } else {
+      const addr = user?.addresses?.find(a => a._id === addrId);
+      if (addr) {
+        setFormData(prev => ({
+          ...prev,
+          firstName: addr.firstName || prev.firstName,
+          lastName: addr.lastName || prev.lastName,
+          phone: addr.phone || prev.phone,
+          address: addr.address || addr.addressLine1 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          zipCode: addr.zipCode || addr.pincode || ''
+        }));
+      }
+    }
+  };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -200,6 +258,61 @@ export default function CheckoutPage() {
               <div className="form-section">
                 <h2>Shipping Information</h2>
 
+                {user?.addresses && user.addresses.length > 0 && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--maroon)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                      Select Delivery Address
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                      {user.addresses.map((addr) => (
+                        <div
+                          key={addr._id}
+                          onClick={() => handleAddressSelect(addr._id)}
+                          style={{
+                            padding: '14px',
+                            border: selectedAddressId === addr._id ? '2px solid #4f0c10' : '1px solid #e5e2df',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            background: selectedAddressId === addr._id ? 'rgba(79, 12, 16, 0.02)' : 'white',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '6px', color: '#1a1a1a', display: 'flex', justifyContent: 'space-between', letterSpacing: '0.05em' }}>
+                            <span>{addr.type?.toUpperCase() || 'HOME'}</span>
+                            {addr.isDefault && <span style={{ fontSize: '0.7rem', color: '#4f0c10', background: '#f5ebeb', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>DEFAULT</span>}
+                          </div>
+                          <div style={{ fontSize: '0.825rem', color: '#666', lineHeight: '1.5' }}>
+                            <strong>{addr.firstName} {addr.lastName}</strong><br />
+                            {addr.address || addr.addressLine1}<br />
+                            {addr.city}, {addr.state} - {addr.zipCode || addr.pincode}
+                          </div>
+                        </div>
+                      ))}
+                      <div
+                        onClick={() => handleAddressSelect('new')}
+                        style={{
+                          padding: '14px',
+                          border: selectedAddressId === 'new' ? '2px solid #4f0c10' : '1px dashed #ddd',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          background: selectedAddressId === 'new' ? 'rgba(79, 12, 16, 0.02)' : 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.85rem',
+                          fontWeight: '700',
+                          color: '#4f0c10',
+                          minHeight: '80px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em'
+                        }}
+                      >
+                        + New Address
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="form-row">
                   <input
                     type="text"
@@ -295,6 +408,13 @@ export default function CheckoutPage() {
                     {formData.paymentMethod === 'cod' && <span style={{ color: '#4f0c10' }}>✓</span>}
                   </label>
                 </div>
+
+                {formData.paymentMethod === 'card' && (
+                  <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#fff8f8', border: '1px solid #ffd0d0', borderRadius: '6px', color: '#4f0c10', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                    <strong style={{ display: 'block', marginBottom: '5px' }}>🔒 Secure Sandbox Mode Active</strong>
+                    Our Stripe payment gateway is currently operating in secure test mode for verification. Your order will be placed successfully without requiring actual card details.
+                  </div>
+                )}
               </div>
 
               <button type="submit" className="btn-place-order" disabled={loading}>

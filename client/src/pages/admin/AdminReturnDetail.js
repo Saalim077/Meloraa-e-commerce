@@ -187,9 +187,9 @@ export default function AdminReturnDetail() {
               </div>
             )}
 
-            {status === 'completed' && (
+            {(status === 'completed' || status === 'approved') && (
               <div className="form-group animate-fade-in">
-                <label className="form-label">Refund Amount (Final)</label>
+                <label className="form-label">Refund Amount</label>
                 <div style={{ position: 'relative' }}>
                   <span style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--muted)' }}>₹</span>
                   <input type="number" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} className="form-input" style={{ paddingLeft: '28px' }} />

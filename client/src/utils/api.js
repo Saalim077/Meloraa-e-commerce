@@ -8,8 +8,11 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
-      if (!window.location.pathname.includes('/login')) window.location.href = '/login';
+    // Only redirect to login if the error is 401 AND it's NOT the initial session check (/auth/me)
+    if (err.response?.status === 401 && !err.config.url.includes('/auth/me')) {
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/reset-password')) {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
@@ -26,8 +29,9 @@ export const authAPI = {
   updateAddress: (id, d) => api.put(`/auth/address/${id}`, d),
   removeAddress: (id) => api.delete(`/auth/address/${id}`),
   toggleWishlist: (pid) => api.put(`/auth/wishlist/${pid}`),
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  forgotPassword: (identifier) => api.post('/auth/forgot-password', { identifier }),
   resetPassword: (token, password) => api.put(`/auth/reset-password/${token}`, { password }),
+  verifyRegister: (d) => api.post('/auth/verify-register', d),
 };
 
 export const productAPI = {
@@ -49,7 +53,7 @@ export const categoryAPI = {
 
 export const orderAPI = {
   create: (d) => api.post('/orders', d),
-  myOrders: () => api.get('/orders/my-orders'),
+  myOrders: (params) => api.get('/orders/my-orders', { params }),
   getOne: (id) => api.get(`/orders/${id}`),
   getAll: (params) => api.get('/orders', { params }),
   updateStatus: (id, d) => api.put(`/orders/${id}/status`, d),

@@ -11,12 +11,18 @@ export default function ProfilePage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { user, loading: userLoading } = useSelector(s => s.auth);
-    const { myOrders, loading: ordersLoading } = useSelector(s => s.orders);
+    const { myOrders, myOrdersPagination, loading: ordersLoading } = useSelector(s => s.orders);
     const { myReturns, loading: returnsLoading } = useSelector(s => s.returns);
     
 
     const [activeTab, setActiveTab] = useState('dashboard');
     const [profileForm, setProfileForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+
+    // Orders Pagination & Filtering State
+    const [ordersPage, setOrdersPage] = useState(1);
+    const [ordersStatus, setOrdersStatus] = useState('');
+    const [ordersSearch, setOrdersSearch] = useState('');
+    const [ordersLimit] = useState(10);
 
     // Address Editing State
     const [editingAddressId, setEditingAddressId] = useState(null);
@@ -27,14 +33,14 @@ export default function ProfilePage() {
     });
 
     useEffect(() => {
-        dispatch(fetchMyOrders());
+        dispatch(fetchMyOrders({ page: ordersPage, limit: ordersLimit, status: ordersStatus, search: ordersSearch }));
         if (activeTab === 'returns') {
            dispatch(fetchMyReturns());
         }
         if (user) {
             setProfileForm(prev => ({ ...prev, name: user.name, email: user.email }));
         }
-    }, [dispatch, user, activeTab]);
+    }, [dispatch, user, activeTab, ordersPage, ordersLimit, ordersStatus, ordersSearch]);
 
     const handleLogout = () => {
         dispatch(logoutUser());
@@ -147,65 +153,112 @@ export default function ProfilePage() {
                         {activeTab === 'orders' && (
                             <div>
                                 <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: '30px' }}>Orders</h2>
+                                <div style={{ display: 'flex', gap: '15px', marginBottom: '25px', flexWrap: 'wrap' }}>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search by Order ID or Product Name..." 
+                                        className="form-input" 
+                                        style={{ flex: '1', minWidth: '250px' }}
+                                        value={ordersSearch}
+                                        onChange={e => { setOrdersSearch(e.target.value); setOrdersPage(1); }}
+                                    />
+                                    <select 
+                                        className="form-input" 
+                                        style={{ width: 'auto', minWidth: '180px' }}
+                                        value={ordersStatus} 
+                                        onChange={e => { setOrdersStatus(e.target.value); setOrdersPage(1); }}
+                                    >
+                                        <option value="">All Statuses</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="shipped">Shipped</option>
+                                        <option value="delivered">Delivered</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                </div>
                                 {ordersLoading ? (
                                     <div className="loading-center"><div className="spinner" /></div>
                                 ) : myOrders?.length === 0 ? (
-                                    <p>No orders yet. <Link to="/" style={{ color: 'var(--gold)' }}>Go to shop</Link></p>
+                                    <p>No orders found. <Link to="/" style={{ color: 'var(--gold)' }}>Go to shop</Link></p>
                                 ) : (
-                                    <table className="orders-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Order</th>
-                                                <th>Date</th>
-                                                <th>Status</th>
-                                                <th>Total</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {myOrders.map(order => (
-                                                <tr key={order._id}>
-                                                    <td style={{ color: 'var(--gold)', fontWeight: '500' }}>#{order._id.substring(0, 8).toUpperCase()}</td>
-                                                    <td>{fmtDate(order.createdAt)}</td>
-                                                    <td style={{ textTransform: 'capitalize' }}>{order.orderStatus}</td>
-                                                    <td>₹{order.total.toLocaleString('en-IN')} for {order.items.length} item(s)</td>
-                                                    <td>
-                                                        <div className="order-actions">
-                                                            <Link to={`/order-confirmation/${order._id}`} className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>VIEW</Link>
-                                                            
-                                                            {order.canCancel && (
-                                                                <button 
-                                                                    className="btn btn-outline btn-sm" 
-                                                                    style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--red)', color: 'var(--red)' }}
-                                                                    onClick={() => handleCancelOrder(order._id)}
-                                                                >
-                                                                    CANCEL
-                                                                </button>
-                                                            )}
-
-                                                            {order.canReturn && (!order.returnStatus || order.returnStatus === 'none') && (
-                                                                <Link 
-                                                                    to={`/request-return?orderId=${order._id}`} 
-                                                                    className="btn btn-gold btn-sm" 
-                                                                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                                                                >
-                                                                    {order.orderStatus === 'delivered' ? 'RETURN / REFUND' : 'REQUEST REFUND'}
-                                                                </Link>
-                                                            )}
-
-                                                            {/* Tooltip for blocked actions */}
-                                                            {((!order.canCancel && order.cancelReason && order.orderStatus !== 'cancelled') || 
-                                                              (!order.canReturn && order.returnReason && (!order.returnStatus || order.returnStatus === 'none'))) && (
-                                                                <span title={order.cancelReason || order.returnReason} style={{ fontSize: '12px', color: 'var(--muted)', cursor: 'help', marginLeft: '5px' }}>?</span>
-                                                            )}
-
-                                                            <a href="https://wa.me/91XXXXXXXXXX" target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>CHAT WITH US</a>
-                                                        </div>
-                                                    </td>
+                                    <>
+                                        <table className="orders-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Order</th>
+                                                    <th>Date</th>
+                                                    <th>Status</th>
+                                                    <th>Total</th>
+                                                    <th>Actions</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {myOrders.map(order => (
+                                                    <tr key={order._id}>
+                                                        <td style={{ color: 'var(--gold)', fontWeight: '500' }}>#{order._id.substring(0, 8).toUpperCase()}</td>
+                                                        <td>{fmtDate(order.createdAt)}</td>
+                                                        <td style={{ textTransform: 'capitalize' }}>{order.orderStatus}</td>
+                                                        <td>₹{order.total.toLocaleString('en-IN')} for {order.items.length} item(s)</td>
+                                                        <td>
+                                                            <div className="order-actions">
+                                                                <Link to={`/order-confirmation/${order._id}`} className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>VIEW</Link>
+                                                                
+                                                                {order.canCancel && !['refunded', 'Refund Requested'].includes(order.orderStatus) && !order.canReturn && (
+                                                                    <button 
+                                                                        className="btn btn-outline btn-sm" 
+                                                                        style={{ padding: '6px 12px', fontSize: '0.8rem', borderColor: 'var(--red)', color: 'var(--red)' }}
+                                                                        onClick={() => handleCancelOrder(order._id)}
+                                                                    >
+                                                                        CANCEL
+                                                                    </button>
+                                                                )}
+
+                                                                {order.canReturn && (!order.returnStatus || order.returnStatus === 'none') && (
+                                                                    <Link 
+                                                                        to={`/request-return?orderId=${order._id}`} 
+                                                                        className="btn btn-gold btn-sm" 
+                                                                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                                                                    >
+                                                                        {order.orderStatus === 'delivered' ? 'RETURN / REFUND' : 'REQUEST REFUND'}
+                                                                    </Link>
+                                                                )}
+
+                                                                {/* Tooltip for blocked actions */}
+                                                                {((!order.canCancel && order.cancelReason && order.orderStatus !== 'cancelled') || 
+                                                                  (!order.canReturn && order.returnReason && (!order.returnStatus || order.returnStatus === 'none'))) && (
+                                                                    <span title={order.cancelReason || order.returnReason} style={{ fontSize: '12px', color: 'var(--muted)', cursor: 'help', marginLeft: '5px' }}>?</span>
+                                                                )}
+
+                                                                <a href="https://wa.me/91XXXXXXXXXX" target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>CHAT WITH US</a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {myOrdersPagination && myOrdersPagination.pages > 1 && (
+                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '30px' }}>
+                                                <button 
+                                                    className="btn btn-secondary btn-sm" 
+                                                    disabled={ordersPage === 1}
+                                                    onClick={() => setOrdersPage(p => Math.max(1, p - 1))}
+                                                >
+                                                    PREV
+                                                </button>
+                                                <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+                                                    Page {myOrdersPagination.page} of {myOrdersPagination.pages}
+                                                </span>
+                                                <button 
+                                                    className="btn btn-secondary btn-sm" 
+                                                    disabled={ordersPage >= myOrdersPagination.pages}
+                                                    onClick={() => setOrdersPage(p => Math.min(myOrdersPagination.pages, p + 1))}
+                                                >
+                                                    NEXT
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         )}

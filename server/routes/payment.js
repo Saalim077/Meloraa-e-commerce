@@ -27,7 +27,16 @@ router.post('/verify', protect, [
 ], validate, async (req, res, next) => {
   try {
     const { orderId, paymentId } = req.body;
-    const order = await Order.findByIdAndUpdate(orderId, { paymentStatus: 'paid', paymentId, orderStatus: 'confirmed' }, { new: true });
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    // Ownership check: only the order owner or admin can verify payment
+    if (order.user.toString() !== req.user._id.toString() && !['admin', 'staff'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to verify this payment' });
+    }
+    order.paymentStatus = 'paid';
+    order.paymentId = paymentId;
+    order.orderStatus = 'confirmed';
+    await order.save();
     res.json({ success: true, order });
   } catch (err) { next(err); }
 });

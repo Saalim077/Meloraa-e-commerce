@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { registerUser } from '../store';
+import { registerUser, verifyRegister } from '../store';
 
 export default function RegisterPage() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { loading, error, user } = useSelector(s => s.auth);
-    const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+    const [form, setForm] = useState({ name: '', identifier: '', password: '', confirmPassword: '' });
+    const [otpStep, setOtpStep] = useState(1);
+    const [userId, setUserId] = useState(null);
+    const [otp, setOtp] = useState('');
 
     useEffect(() => {
-        // If already logged in, redirect
         if (user) {
             if (['admin', 'staff'].includes(user.role)) navigate('/admin');
             else navigate('/');
@@ -28,11 +30,27 @@ export default function RegisterPage() {
         const { confirmPassword, ...registerData } = form;
         const res = await dispatch(registerUser(registerData));
 
+        if (res.payload?.success && res.payload?.userId) {
+            toast.success(res.payload.message || 'OTP sent to your email/phone!');
+            setUserId(res.payload.userId);
+            setOtpStep(2);
+        } else {
+            toast.error(res.payload || 'Registration failed');
+        }
+    };
+
+    const handleVerifyOtp = async (e) => {
+        e.preventDefault();
+        if (!otp.trim() || otp.trim().length !== 6) {
+            toast.error('Please enter a valid 6-digit OTP');
+            return;
+        }
+        const res = await dispatch(verifyRegister({ userId, otp: otp.trim() }));
         if (res.payload?.user) {
             toast.success(`Welcome to MELORAA, ${res.payload.user.name.split(' ')[0]}!`);
             navigate('/');
         } else {
-            toast.error(res.payload || 'Registration failed');
+            toast.error(res.payload || 'OTP verification failed');
         }
     };
 
@@ -53,34 +71,54 @@ export default function RegisterPage() {
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: '8px', color: '#1a1a1a' }}>Sign Up</h2>
                         <p style={{ color: '#8a8a8a', fontSize: '0.875rem', marginBottom: '28px' }}>Join MELORAA for exclusive fashion.</p>
 
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Full Name</label>
-                                <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="text" placeholder="John Doe" value={form.name}
-                                    onChange={e => setForm({ ...form, name: e.target.value })} required />
-                            </div>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Email Address</label>
-                                <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="email" placeholder="john@example.com" value={form.email}
-                                    onChange={e => setForm({ ...form, email: e.target.value })} required />
-                            </div>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Password</label>
-                                <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="password" placeholder="••••••••" value={form.password}
-                                    onChange={e => setForm({ ...form, password: e.target.value })} required />
-                            </div>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Confirm Password</label>
-                                <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="password" placeholder="••••••••" value={form.confirmPassword}
-                                    onChange={e => setForm({ ...form, confirmPassword: e.target.value })} required />
-                            </div>
+                        {otpStep === 1 ? (
+                            <form onSubmit={handleSubmit}>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Full Name</label>
+                                    <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="text" placeholder="John Doe" value={form.name}
+                                        onChange={e => setForm({ ...form, name: e.target.value })} required />
+                                </div>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Email Address or Phone Number</label>
+                                    <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="text" placeholder="john@example.com or 9876543210" value={form.identifier}
+                                        onChange={e => setForm({ ...form, identifier: e.target.value })} required />
+                                </div>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Password</label>
+                                    <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="password" placeholder="••••••••" value={form.password}
+                                        onChange={e => setForm({ ...form, password: e.target.value })} required />
+                                </div>
+                                <div style={{ marginBottom: '20px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '8px' }}>Confirm Password</label>
+                                    <input style={{ width: '100%', padding: '12px 14px', background: 'white', border: '1px solid #e5e2df', borderRadius: '8px', color: '#1a1a1a', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} type="password" placeholder="••••••••" value={form.confirmPassword}
+                                        onChange={e => setForm({ ...form, confirmPassword: e.target.value })} required />
+                                </div>
 
-                            {error && <p style={{ fontSize: '0.8rem', color: '#e05252', marginBottom: '16px' }}>{error}</p>}
+                                {error && <p style={{ fontSize: '0.8rem', color: '#e05252', marginBottom: '16px' }}>{error}</p>}
 
-                            <button type="submit" disabled={loading} style={{ width: '100%', marginTop: '8px', padding: '13px', background: '#4f0c10', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', letterSpacing: '0.03em' }}>
-                                {loading ? 'Creating account...' : 'Create Account'}
-                            </button>
-                        </form>
+                                <button type="submit" disabled={loading} style={{ width: '100%', marginTop: '8px', padding: '13px', background: '#4f0c10', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', letterSpacing: '0.03em' }}>
+                                    {loading ? 'Creating account...' : 'Create Account'}
+                                </button>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleVerifyOtp}>
+                                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '500', color: '#8a8a8a', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px' }}>Enter 6-Digit OTP</label>
+                                    <input style={{ width: '100%', maxWidth: '240px', padding: '14px', background: 'white', border: '2px solid #4f0c10', borderRadius: '8px', color: '#4f0c10', fontSize: '1.5rem', fontWeight: '700', letterSpacing: '0.3em', textAlign: 'center', outline: 'none', boxSizing: 'border-box', margin: '0 auto', display: 'block' }} type="text" maxLength={6} placeholder="••••••" value={otp}
+                                        onChange={e => setOtp(e.target.value)} required />
+                                    <p style={{ fontSize: '0.8rem', color: '#8a8a8a', marginTop: '12px' }}>OTP sent to {form.identifier}</p>
+                                </div>
+                                {error && <p style={{ fontSize: '0.8rem', color: '#e05252', marginBottom: '16px', textAlign: 'center' }}>{error}</p>}
+                                <button type="submit" disabled={loading} style={{ width: '100%', marginTop: '8px', padding: '13px', background: '#4f0c10', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer', letterSpacing: '0.03em' }}>
+                                    {loading ? 'Verifying...' : 'Verify & Complete'}
+                                </button>
+                                <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                                    <button type="button" onClick={() => setOtpStep(1)} style={{ background: 'none', border: 'none', color: '#8a8a8a', fontSize: '0.8rem', textDecoration: 'underline', cursor: 'pointer' }}>
+                                        Change Details
+                                    </button>
+                                </div>
+                            </form>
+                        )}
 
                         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.875rem' }}>
                             <span style={{ color: '#8a8a8a' }}>Already have an account? </span>

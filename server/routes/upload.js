@@ -1,54 +1,66 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const { protect, authorize } = require('../middleware/auth');
 
-const uploadDir = path.join(__dirname, '..', 'uploads');
-try {
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-} catch (err) {
-  console.warn('Vercel read-only filesystem detected, skipping local upload directory creation.');
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const upload = multer({
+// Setup Cloudinary Storage for Multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'luxe-store',
+    allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp'],
+    // Automatically resize huge images so they load fast
+    transformation: [{ width: 1200, height: 1200, crop: 'limit' }]
+  }
+});
+
+const upload = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp/;
-    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowed.test(file.mimetype);
-    if (ext && mime) return cb(null, true);
-    cb(new Error('Only images allowed'));
-  },
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+// POST /api/upload
 router.post('/', protect, authorize('admin', 'staff'), upload.array('images', 8), (req, res) => {
-  const urls = req.files.map(f => `/uploads/${f.filename}`);
-  res.json({ success: true, urls });
+  try {
+    // Cloudinary returns the full permanent URL inside `req.file.path`
+    const urls = req.files.map(f => f.path);
+    res.json({ success: true, urls });
+  } catch (err) {
+    console.error('Upload Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to upload images' });
+  }
 });
 
-router.delete('/', protect, authorize('admin', 'staff'), (req, res) => {
+// DELETE /api/upload
+router.delete('/', protect, authorize('admin', 'staff'), async (req, res) => {
   try {
-    const filename = path.basename(req.body.filename);
-    const filePath = path.join(uploadDir, filename);
-    const resolved = path.resolve(filePath);
-    if (!resolved.startsWith(path.resolve(uploadDir))) {
-      return res.status(400).json({ success: false, message: 'Invalid filename' });
+    const imageUrl = req.body.filename;
+    if (!imageUrl || !imageUrl.includes('cloudinary.com')) {
+      return res.status(400).json({ success: false, message: 'Invalid Cloudinary URL' });
     }
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    res.json({ success: true, message: 'File deleted' });
-  } catch {
-    res.json({ success: true, message: 'File not found' });
+
+    // Extract the public ID from the URL (e.g. "luxe-store/xyz")
+    const urlParts = imageUrl.split('/');
+    const filename = urlParts[urlParts.length - 1].split('.')[0]; // xyz
+    const folder = urlParts[urlParts.length - 2]; // luxe-store
+    const publicId = `${folder}/${filename}`;
+
+    // Delete it from Cloudinary servers
+    await cloudinary.uploader.destroy(publicId);
+    
+    res.json({ success: true, message: 'File deleted from Cloudinary' });
+  } catch (err) {
+    console.error('Delete Error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete file' });
   }
 });
 

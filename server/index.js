@@ -16,9 +16,9 @@ let isConnected = false;
 const connectDB = async () => {
   if (isConnected) return;
   if (!process.env.MONGO_URI) throw new Error("MONGO_URI is missing in Vercel Environment Variables");
-  
+
   // Connect to DB directly and throw if it fails so the middleware can catch it
-  const db = await mongoose.connect(process.env.MONGO_URI, { 
+  const db = await mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 5000 // Timeout fast so Vercel doesn't crash
   });
   isConnected = db.connections[0].readyState;
@@ -33,10 +33,10 @@ if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
     } catch (err) {
       // If DB fails to connect, return the exact error to the browser!
       console.error('Vercel DB Connection Error:', err);
-      return res.status(500).json({ 
-        success: false, 
-        message: 'Database Connection Failed', 
-        errorDetails: err.message 
+      return res.status(500).json({
+        success: false,
+        message: 'Database Connection Failed',
+        errorDetails: err.message
       });
     }
   });
@@ -83,6 +83,8 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+app.get('/test', (req, res) => res.json({ success: true, message: 'Backend is working perfectly on port 5000!' }));
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
@@ -126,7 +128,7 @@ if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
 } else {
   // Local development
   const startServer = async () => {
-    const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT || 5001;
 
     if (!process.env.JWT_SECRET) {
       console.error('❌ FATAL: JWT_SECRET environment variable is not set.');
@@ -141,6 +143,8 @@ if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
       console.warn('⚠️  MongoDB connection failed locally:', err.message);
       console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');
     }
+
+    // Trigger nodemon restart comment
 
     app.listen(PORT, () => {
       console.log(`🚀 LuxeStore API running on http://localhost:${PORT}`);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../styles/pages.css';
@@ -26,8 +26,8 @@ export default function TrackOrderPage() {
     setError('');
     setOrder(null);
     try {
-      const res = await axios.get(`/api/orders/${orderId.trim()}`);
-      setOrder(res.data);
+      const res = await api.get(`/orders/${orderId.trim()}`);
+      setOrder(res.data.order);
     } catch (err) {
       setError(err.response?.status === 404 ? 'Order not found. Please check the Order ID.' : 'Unable to fetch order. Please try again.');
     } finally {
@@ -65,7 +65,7 @@ export default function TrackOrderPage() {
         {order && (
           <div className="content-section">
             <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px', marginBottom: '32px' }}>
-              <div>
+               <div>
                 <h2 style={{ margin: '0 0 8px' }}>Order #{order._id?.slice(-8).toUpperCase()}</h2>
                 <p style={{ color: '#8a8a8a', margin: 0, fontSize: '0.9rem' }}>Placed on {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               </div>
@@ -78,7 +78,7 @@ export default function TrackOrderPage() {
             {/* Timeline */}
             <div className="timeline">
               {STEPS.map((step, i) => {
-                const currentIdx = getStepIndex(order.status);
+                const currentIdx = getStepIndex(order.orderStatus || order.status);
                 const isCompleted = i < currentIdx;
                 const isActive = i === currentIdx;
                 return (
@@ -100,7 +100,7 @@ export default function TrackOrderPage() {
                 {order.items.map((item, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #f0eeeb' }}>
                     <div>
-                      <p style={{ fontWeight: 600, margin: 0, color: '#1a1a1a' }}>{item.name}</p>
+                      <p style={{ fontWeight: 600, margin: 0, color: '#1a1a1a' }}>{item.product?.name || item.name || 'Product'}</p>
                       <p style={{ color: '#8a8a8a', margin: '4px 0 0', fontSize: '0.85rem' }}>Qty: {item.quantity}</p>
                     </div>
                     <p style={{ fontWeight: 700, color: '#4f0c10' }}>₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>

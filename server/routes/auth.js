@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/auth');
 const sendEmail = require('../utils/email');
 const { body, param } = require('express-validator');
@@ -11,7 +12,7 @@ const validate = require('../middleware/validate');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 30, // Increased for development testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many attempts, please try again after 15 minutes.' },
@@ -19,7 +20,7 @@ const authLimiter = rateLimit({
 
 const accountCreationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 30, // Increased for development testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many accounts created, please try again after an hour.' },
@@ -27,7 +28,7 @@ const accountCreationLimiter = rateLimit({
 
 const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 30, // Increased for development testing
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many password reset attempts, please try again after an hour.' },
@@ -50,29 +51,127 @@ const sendToken = (res, user, statusCode = 200) => {
 // POST /api/auth/register
 router.post('/register', accountCreationLimiter, [
   body('name').trim().notEmpty().withMessage('Name is required'),
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('identifier').trim().notEmpty().withMessage('Email or Phone is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ], validate, async (req, res, next) => {
   try {
-    const { name, email, password, phone } = req.body;
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ success: false, message: 'Email already registered' });
-    const user = await User.create({ name, email, password, phone });
+    const { name, identifier, password } = req.body;
+    const isEmail = identifier.includes('@');
+    const emailVal = isEmail ? identifier.toLowerCase() : `${identifier}@luxestore-temp.com`;
+    const phoneVal = isEmail ? '' : identifier;
+
+    const existing = await User.findOne({ $or: [{ email: emailVal }, { phone: identifier }] });
+    if (existing) {
+      if (existing.status === 'pending') {
+        const plainOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        existing.otp = await bcrypt.hash(plainOtp, 12);
+        existing.otpExpire = Date.now() + 10 * 60 * 1000;
+        existing.name = name;
+        existing.password = password;
+        await existing.save();
+
+        if (isEmail) {
+          sendEmail({
+            to: existing.email,
+            subject: 'Your LuxeStore Registration OTP',
+            html: `
+              <div style="max-width:600px;margin:0 auto;background:#0f0e0d;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;text-align:center;">
+                <h1 style="color:#d4af37;letter-spacing:4px;">LUXESTORE</h1>
+                <p style="color:#e8e0d0;font-size:16px;">Your One-Time Password (OTP) for account verification is:</p>
+                <div style="margin:32px 0;padding:20px;background:#1a1917;border:1px solid #33312e;border-radius:8px;font-size:32px;font-weight:700;letter-spacing:8px;color:#d4af37;">
+                  ${plainOtp}
+                </div>
+                <p style="color:#a09882;font-size:12px;">This OTP is valid for 10 minutes.</p>
+              </div>
+            `,
+          }).catch(e => console.error('OTP Email Failed:', e));
+        } else {
+          console.log(`[SMS TRANSPORT] Sending Registration OTP ${plainOtp} to phone number ${existing.phone}`);
+        }
+        return res.json({ success: true, message: 'OTP sent successfully for verification', userId: existing._id });
+      }
+
+      return res.status(400).json({ success: false, message: 'This email or phone number is already registered. Please log in or reset your password.' });
+    }
+
+    const plainOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const user = new User({
+      name,
+      email: emailVal,
+      phone: phoneVal,
+      password,
+      status: 'pending',
+      emailVerified: false,
+      otpExpire: Date.now() + 10 * 60 * 1000
+    });
+    user.otp = await bcrypt.hash(plainOtp, 12);
+    await user.save();
+
+    if (isEmail) {
+      sendEmail({
+        to: user.email,
+        subject: 'Your LuxeStore Registration OTP',
+        html: `
+          <div style="max-width:600px;margin:0 auto;background:#0f0e0d;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;text-align:center;">
+            <h1 style="color:#d4af37;letter-spacing:4px;">LUXESTORE</h1>
+            <p style="color:#e8e0d0;font-size:16px;">Your One-Time Password (OTP) for account verification is:</p>
+            <div style="margin:32px 0;padding:20px;background:#1a1917;border:1px solid #33312e;border-radius:8px;font-size:32px;font-weight:700;letter-spacing:8px;color:#d4af37;">
+              ${plainOtp}
+            </div>
+            <p style="color:#a09882;font-size:12px;">This OTP is valid for 10 minutes.</p>
+          </div>
+        `,
+      }).catch(e => console.error('OTP Email Failed:', e));
+    } else {
+      console.log(`[SMS TRANSPORT] Sending Registration OTP ${plainOtp} to phone number ${user.phone}`);
+    }
+
+    res.json({ success: true, message: 'OTP sent successfully for verification', userId: user._id });
+  } catch (err) { next(err); }
+});
+
+// POST /api/auth/verify-register
+router.post('/verify-register', accountCreationLimiter, [
+  body('userId').isMongoId().withMessage('Invalid User ID'),
+  body('otp').trim().isLength({ min: 6, max: 6 }).withMessage('Valid 6-digit OTP is required'),
+], validate, async (req, res, next) => {
+  try {
+    const { userId, otp } = req.body;
+    const user = await User.findById(userId).select('+otp +otpExpire');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.status !== 'pending') return res.status(400).json({ success: false, message: 'Account is already verified' });
+
+    if (!user.otpExpire || user.otpExpire < Date.now()) {
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please register again to receive a new code.' });
+    }
+
+    if (!(await user.compareOtp(otp))) {
+      return res.status(401).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    user.status = 'active';
+    user.emailVerified = true;
+    user.otp = undefined;
+    user.otpExpire = undefined;
+    user.lastLogin = new Date();
+    await user.save({ validateBeforeSave: false });
+
     sendToken(res, user, 201);
   } catch (err) { next(err); }
 });
 
 // POST /api/auth/login
 router.post('/login', authLimiter, [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('email').trim().notEmpty().withMessage('Email or Phone is required'),
   body('password').notEmpty().withMessage('Password is required'),
 ], validate, async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ $or: [{ email: email.toLowerCase() }, { phone: email }] }).select('+password');
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
+    if (user.status === 'pending') return res.status(403).json({ success: false, message: 'Account not verified. Please complete registration OTP verification.' });
     if (user.status === 'blocked') return res.status(403).json({ success: false, message: 'Account blocked' });
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
@@ -186,37 +285,44 @@ router.put('/wishlist/:productId', protect, [
 
 // POST /api/auth/forgot-password
 router.post('/forgot-password', passwordResetLimiter, [
-  body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+  body('identifier').trim().notEmpty().withMessage('Email or Phone Number is required'),
 ], validate, async (req, res, next) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.json({ success: true, message: 'If email exists, reset link sent' });
+    const { identifier } = req.body;
+    const user = await User.findOne({ $or: [{ email: identifier.toLowerCase() }, { phone: identifier }] });
+    if (!user) return res.json({ success: true, message: 'If account exists, reset instructions have been sent.' });
+
     const token = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
     user.resetPasswordExpire = Date.now() + 30 * 60 * 1000;
     await user.save({ validateBeforeSave: false });
 
     const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password/${token}`;
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: 'Password Reset - LuxeStore',
-        html: `
-          <div style="max-width:600px;margin:0 auto;background:#0f0e0d;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;">
-            <h1 style="color:#d4af37;letter-spacing:4px;text-align:center;">LUXESTORE</h1>
-            <p style="color:#e8e0d0;font-size:14px;">You requested a password reset. Click the link below to reset your password:</p>
-            <div style="text-align:center;margin:24px 0;">
-              <a href="${resetUrl}" style="background:#d4af37;color:#0f0e0d;padding:12px 32px;text-decoration:none;border-radius:4px;font-weight:700;">Reset Password</a>
+    
+    if (user.email && user.email.includes('@') && !user.email.includes('luxestore-temp.com')) {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: 'Password Reset - MELORAA',
+          html: `
+            <div style="max-width:600px;margin:0 auto;background:#faf8f6;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;border:1px solid #e5e2df;border-radius:12px;">
+              <h1 style="color:#4f0c10;letter-spacing:4px;text-align:center;font-family:Georgia,serif;">MELORAA</h1>
+              <p style="color:#1a1a1a;font-size:14px;line-height:1.6;">You requested a password reset. Click the link below to set your new password:</p>
+              <div style="text-align:center;margin:24px 0;">
+                <a href="${resetUrl}" style="background:#4f0c10;color:white;padding:12px 32px;text-decoration:none;border-radius:8px;font-weight:700;display:inline-block;">Reset Password</a>
+              </div>
+              <p style="color:#8a8a8a;font-size:12px;">This link is valid for 30 minutes. If you did not request this reset, please ignore this email.</p>
             </div>
-            <p style="color:#a09882;font-size:12px;">This link expires in 30 minutes. If you didn't request this, please ignore this email.</p>
-          </div>
-        `,
-      });
-    } catch (emailErr) {
-      console.error('Failed to send reset email:', emailErr);
+          `,
+        });
+      } catch (emailErr) {
+        console.error('Failed to send reset email:', emailErr);
+      }
+    } else if (user.phone) {
+      console.log(`[SMS TRANSPORT] Password Reset Link for phone ${user.phone}: ${resetUrl}`);
     }
 
-    res.json({ success: true, message: 'If email exists, reset link sent' });
+    res.json({ success: true, message: 'If account exists, password reset instructions have been sent.' });
   } catch (err) { next(err); }
 });
 

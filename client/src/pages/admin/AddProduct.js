@@ -583,7 +583,8 @@ export default function AddProduct() {
                                 {v.images?.map((img, imgIdx) => (
                                   <div key={imgIdx} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #e8e2db' }}>
                                     <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <button onClick={() => {
+                                    <button onClick={(e) => {
+                                      e.preventDefault();
                                       const vv = [...form.variants];
                                       vv[i].images = vv[i].images.filter((_, idx) => idx !== imgIdx);
                                       set('variants', vv);
@@ -591,8 +592,22 @@ export default function AddProduct() {
                                   </div>
                                 ))}
                                 <button className="btn btn-outline btn-sm" style={{ width: '80px', height: '80px', borderStyle: 'dashed', fontSize: '0.7rem' }}
-                                  onClick={() => document.getElementById(`v-gal-${i}`).click()}>
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    document.getElementById(`v-gal-${i}`).click();
+                                  }}>
                                   Add Images
+                                </button>
+                                <button className="btn btn-outline btn-sm" style={{ width: '80px', height: '80px', borderStyle: 'dashed', fontSize: '0.7rem', background: 'var(--cream)' }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const allMainImages = [form.mainImage, ...form.images].filter(Boolean);
+                                    if (allMainImages.length === 0) return alert('No main images to copy!');
+                                    const vv = [...form.variants];
+                                    vv[i].images = [...new Set([...(vv[i].images || []), ...allMainImages])];
+                                    set('variants', vv);
+                                  }}>
+                                  Copy Main
                                 </button>
                                 <input type="file" id={`v-gal-${i}`} multiple style={{ display: 'none' }} accept="image/*" onChange={e => handleUpload(e.target.files, 'variant', i)} />
                               </div>

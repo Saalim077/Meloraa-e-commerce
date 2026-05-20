@@ -75,7 +75,7 @@ export default function ReturnStatusPage() {
               Requested on {new Date(rma.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
-          {['pending', 'approved'].includes(rma.status) && (
+          {rma.status === 'pending' && (
             <button 
               className="btn-cancel-return" 
               onClick={handleCancel} 

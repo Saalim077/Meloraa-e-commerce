@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { settingsAPI } from '../../utils/api';
+import { settingsAPI, uploadAPI } from '../../utils/api';
 
 export default function AdminSettings() {
   const { user } = useSelector(s => s.auth);
@@ -10,10 +10,70 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState('general');
+  const [templates, setTemplates] = useState([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   useEffect(() => {
     loadSettings();
+    loadTemplates();
   }, []);
+
+  const loadTemplates = async () => {
+    try {
+      setLoadingTemplates(true);
+      const res = await settingsAPI.getEmailTemplates();
+      setTemplates(res.data || []);
+    } catch (err) {
+      toast.error('Failed to load email templates');
+    } finally { setLoadingTemplates(false); }
+  };
+
+  const handleOpenCreateTemplate = () => {
+    setEditingTemplate({ name: '', subject: '', template: '', variables: 'orderNumber, total, userName', type: 'notification', isActive: true });
+    setShowTemplateModal(true);
+  };
+
+  const handleOpenEditTemplate = (tmpl) => {
+    setEditingTemplate({ ...tmpl, variables: Array.isArray(tmpl.variables) ? tmpl.variables.join(', ') : tmpl.variables });
+    setShowTemplateModal(true);
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!editingTemplate?.name || !editingTemplate?.subject || !editingTemplate?.template) {
+      return toast.error('Please fill in all required template fields');
+    }
+    const toastId = toast.loading('Saving email template...');
+    try {
+      const payload = {
+        ...editingTemplate,
+        variables: typeof editingTemplate.variables === 'string' ? editingTemplate.variables.split(',').map(v => v.trim()).filter(Boolean) : editingTemplate.variables
+      };
+      if (editingTemplate._id) {
+        await settingsAPI.updateEmailTemplate(editingTemplate._id, payload);
+      } else {
+        await settingsAPI.createEmailTemplate(payload);
+      }
+      await loadTemplates();
+      setShowTemplateModal(false);
+      toast.update(toastId, { render: 'Email template saved successfully!', type: 'success', isLoading: false, autoClose: 2000 });
+    } catch (err) {
+      toast.update(toastId, { render: err.response?.data?.message || 'Failed to save template', type: 'error', isLoading: false, autoClose: 3000 });
+    }
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this email template?')) return;
+    const toastId = toast.loading('Deleting template...');
+    try {
+      await settingsAPI.deleteEmailTemplate(id);
+      await loadTemplates();
+      toast.update(toastId, { render: 'Template deleted successfully!', type: 'success', isLoading: false, autoClose: 2000 });
+    } catch (err) {
+      toast.update(toastId, { render: 'Failed to delete template', type: 'error', isLoading: false, autoClose: 3000 });
+    }
+  };
 
   const loadSettings = async () => {
     try {
@@ -43,6 +103,23 @@ export default function AdminSettings() {
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBannerUpload = async (file, index) => {
+    if (!file) return;
+    const toastId = toast.loading('Uploading banner to Cloudinary...');
+    const fd = new FormData();
+    fd.append('images', file);
+    try {
+      const res = await uploadAPI.upload(fd);
+      const url = res.data.urls[0];
+      const newBanners = [...settings.homepageBanners];
+      newBanners[index].image = url;
+      setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
+      toast.update(toastId, { render: 'Banner uploaded successfully!', type: 'success', isLoading: false, autoClose: 2000 });
+    } catch (err) {
+      toast.update(toastId, { render: 'Upload failed', type: 'error', isLoading: false, autoClose: 3000 });
     }
   };
 
@@ -161,13 +238,13 @@ export default function AdminSettings() {
 
       <div className="tabs-wrapper">
         <div className="tabs">
-          {['general', 'storefront', 'email', 'stripe', 'shipping', 'tax', 'attributes', 'filters', 'rma'].map(t => (
+          {['general', 'storefront', 'email', 'templates', 'stripe', 'shipping', 'tax', 'attributes', 'filters', 'rma'].map(t => (
             <button
               key={t}
               className={`tab ${tab === t ? 'active' : ''}`}
               onClick={() => setTab(t)}
             >
-              {t === 'filters' ? 'Shop Filters' : t === 'rma' ? 'RMA Policies' : t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === 'filters' ? 'Shop Filters' : t === 'rma' ? 'RMA Policies' : t === 'templates' ? 'Email Templates' : t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
           ))}
         </div>
@@ -375,6 +452,117 @@ export default function AdminSettings() {
                 readOnly={!isAdmin}
               />
             </div>
+          </div>
+        )}
+
+        {tab === 'templates' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div>
+                <h3>Email Templates Management</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>Create and customize dynamic HTML email templates sent to customers.</p>
+              </div>
+              <button className="btn btn-primary btn-sm" onClick={handleOpenCreateTemplate} disabled={!isAdmin}>+ CREATE TEMPLATE</button>
+            </div>
+
+            {loadingTemplates ? (
+              <div className="loading-center"><div className="spinner" /></div>
+            ) : (
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name / Code</th>
+                      <th>Subject</th>
+                      <th>Type</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {templates.map(tmpl => (
+                      <tr key={tmpl._id}>
+                        <td><strong>{tmpl.name}</strong></td>
+                        <td>{tmpl.subject}</td>
+                        <td><span className="chip">{tmpl.type}</span></td>
+                        <td>
+                          <span className={`chip ${tmpl.isActive ? 'chip-success' : 'chip-warning'}`}>
+                            {tmpl.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-outline btn-sm" onClick={() => handleOpenEditTemplate(tmpl)} disabled={!isAdmin}>Edit</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDeleteTemplate(tmpl._id)} disabled={!isAdmin}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {templates.length === 0 && (
+                      <tr>
+                        <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>
+                          No custom email templates found. Click "+ Create Template" to add one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {showTemplateModal && editingTemplate && (
+              <div className="modal-backdrop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000 }}>
+                <div className="card" style={{ width: '90%', maxWidth: '700px', maxHeight: '90vh', overflowY: 'auto', background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ margin: 0 }}>{editingTemplate._id ? 'Edit Email Template' : 'Create Email Template'}</h3>
+                    <button className="btn btn-ghost" onClick={() => setShowTemplateModal(false)}>✕</button>
+                  </div>
+
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Template Code / Name (e.g. order_shipped)</label>
+                      <input className="form-input" type="text" value={editingTemplate.name} onChange={e => setEditingTemplate({...editingTemplate, name: e.target.value})} disabled={!!editingTemplate._id} placeholder="order_shipped" />
+                    </div>
+                    <div className="form-group">
+                      <label>Template Type</label>
+                      <select className="form-input" value={editingTemplate.type} onChange={e => setEditingTemplate({...editingTemplate, type: e.target.value})}>
+                        <option value="notification">Notification</option>
+                        <option value="order">Order</option>
+                        <option value="user">User</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Email Subject</label>
+                    <input className="form-input" type="text" value={editingTemplate.subject} onChange={e => setEditingTemplate({...editingTemplate, subject: e.target.value})} placeholder="Your LuxeStore Order Has Shipped" />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Variables / Placeholders (comma separated)</label>
+                    <input className="form-input" type="text" value={editingTemplate.variables} onChange={e => setEditingTemplate({...editingTemplate, variables: e.target.value})} placeholder="orderNumber, trackingNumber, total" />
+                    <small style={{ color: 'var(--muted)', marginTop: '4px', display: 'block' }}>Use these in your HTML below like &#123;&#123;orderNumber&#125;&#125;</small>
+                  </div>
+
+                  <div className="form-group">
+                    <label>HTML Template Content</label>
+                    <textarea className="form-input" rows="10" value={editingTemplate.template} onChange={e => setEditingTemplate({...editingTemplate, template: e.target.value})} placeholder="<h1>Your Order &#123;&#123;orderNumber&#125;&#125; has shipped!</h1>" style={{ fontFamily: 'monospace', fontSize: '13px' }} />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={editingTemplate.isActive} onChange={e => setEditingTemplate({...editingTemplate, isActive: e.target.checked})} style={{ width: '18px', height: '18px' }} />
+                      <strong>Active Template</strong>
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+                    <button className="btn btn-outline" onClick={() => setShowTemplateModal(false)}>Cancel</button>
+                    <button className="btn btn-primary" onClick={handleSaveTemplate}>Save Template</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -923,6 +1111,10 @@ export default function AdminSettings() {
                         newBanners[index].image = e.target.value;
                         setSettings(prev => ({ ...prev, homepageBanners: newBanners }));
                       }} placeholder="/images/hero-banner.png" style={{ flex: 1 }} />
+                      <button className="btn btn-outline" style={{ whiteSpace: 'nowrap' }} onClick={() => document.getElementById(`banner-upload-${index}`).click()}>
+                        Upload Image
+                      </button>
+                      <input type="file" id={`banner-upload-${index}`} style={{ display: 'none' }} accept="image/*" onChange={(e) => handleBannerUpload(e.target.files[0], index)} />
                     </div>
                     {banner.image && <img src={banner.image} alt="Banner Preview" style={{ marginTop: '10px', maxHeight: '100px', borderRadius: '8px', border: '1px solid #ccc' }} />}
                   </div>

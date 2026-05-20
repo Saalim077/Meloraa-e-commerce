@@ -4,6 +4,8 @@ const Return = require('../models/Return');
 const { Order } = require('../models/index');
 const Product = require('../models/Product');
 const { protect, authorize } = require('../middleware/auth');
+const sendEmail = require('../utils/email');
+const emailTemplates = require('../utils/emailTemplates');
 const { Settings } = require('../models/Extended');
 const { checkRMAEligibility } = require('../utils/rmaUtils');
 const { body, param } = require('express-validator');
@@ -369,6 +371,36 @@ router.put('/:id/status', protect, authorize('admin', 'staff'), [
     }
 
     await rma.save();
+    // Email Notifications
+    const customerEmail = rma.user?.email || order?.shippingAddress?.email;
+    if (customerEmail) {
+      let emailData;
+      
+      // We pass the RMA object, but the templates were built expecting an Order object.
+      // So we map the RMA properties into a format the template expects (total, refundAmount, _id).
+      const dummyOrder = {
+        _id: order?._id || rma.order,
+        createdAt: rma.createdAt,
+        total: order?.total || 0,
+        refundAmount: rma.refundAmount || refundAmount || 0,
+        trackingNumber: rma.trackingNumber,
+      };
+
+      if (status === 'approved') {
+        emailData = emailTemplates.buildRefundApprovedEmail(dummyOrder);
+      } else if (status === 'completed') {
+        emailData = emailTemplates.buildRefundProcessedEmail(dummyOrder);
+      }
+
+      if (emailData) {
+        sendEmail({
+          to: customerEmail,
+          subject: emailData.subject,
+          html: emailData.html
+        }).catch(e => console.error('RMA Status Email Failed:', e));
+      }
+    }
+
     res.json({ success: true, rma });
   } catch (err) { next(err); }
 });
