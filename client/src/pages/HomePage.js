@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart, openCart } from '../store';
-import axios from 'axios';
+import api from '../utils/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../styles/pages.css';
@@ -18,9 +18,9 @@ export default function HomePage() {
   const loadData = async () => {
     try {
       const [prodRes, catRes, settingsRes] = await Promise.all([
-        axios.get('/api/products?limit=8&sort=-createdAt'),
-        axios.get('/api/categories'),
-        axios.get('/api/settings')
+        api.get('/products?limit=8&sort=-createdAt'),
+        api.get('/categories'),
+        api.get('/settings')
       ]);
       setFeatured(prodRes.data.products || []);
       setCategories((catRes.data.categories || []).filter(c => !c.parent).slice(0, 4));

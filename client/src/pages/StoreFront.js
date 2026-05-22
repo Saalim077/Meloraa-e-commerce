@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart, openCart } from '../store';
-import axios from 'axios';
+import api from '../utils/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProductFilters from '../components/ProductFilters';
@@ -36,9 +36,9 @@ export default function StoreFront() {
     setLoading(true);
     try {
       const [catRes, settingsRes, prodRes] = await Promise.all([
-        axios.get('/api/categories'),
-        axios.get('/api/settings'),
-        axios.get('/api/products')
+        api.get('/categories'),
+        api.get('/settings'),
+        api.get('/products')
       ]);
       setCategories(catRes.data.categories || []);
       setSettings(settingsRes.data || null);

@@ -70,6 +70,7 @@ router.post('/register', accountCreationLimiter, [
         existing.password = password;
         await existing.save();
 
+        console.log(`[OTP SIMULATION] Generated OTP ${plainOtp} for pending user ${existing.email}`);
         if (isEmail) {
           sendEmail({
             to: existing.email,
@@ -107,6 +108,7 @@ router.post('/register', accountCreationLimiter, [
     user.otp = await bcrypt.hash(plainOtp, 12);
     await user.save();
 
+    console.log(`[OTP SIMULATION] Generated OTP ${plainOtp} for new user ${user.email}`);
     if (isEmail) {
       sendEmail({
         to: user.email,
@@ -303,6 +305,7 @@ router.post('/forgot-password', passwordResetLimiter, [
     await user.save({ validateBeforeSave: false });
 
     const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:3000'}/reset-password/${token}`;
+    console.log(`[RESET SIMULATION] Password Reset URL for ${user.email || user.phone}: ${resetUrl}`);
     
     if (user.email && user.email.includes('@') && !user.email.includes('luxestore-temp.com')) {
       try {
