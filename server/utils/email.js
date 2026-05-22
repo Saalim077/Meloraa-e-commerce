@@ -11,22 +11,29 @@ const sendEmail = async ({ to, subject, html }) => {
     if (settings && settings.emailProvider === 'smtp' && settings.smtpHost) {
       config = {
         host: settings.smtpHost,
-        port: settings.smtpPort || 587,
+        port: Number(settings.smtpPort) || 587,
         auth: { 
           user: settings.smtpUser, 
           pass: settings.smtpPassword 
         },
-        secure: settings.smtpPort === 465, // true for 465, false for other ports
+        secure: Number(settings.smtpPort) === 465,
+        tls: {
+          rejectUnauthorized: false
+        }
       };
     } else {
       // Fallback to .env
       config = {
         host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
+        port: Number(process.env.EMAIL_PORT) || 587,
         auth: { 
           user: process.env.EMAIL_USER, 
           pass: process.env.EMAIL_PASS 
         },
+        secure: Number(process.env.EMAIL_PORT) === 465,
+        tls: {
+          rejectUnauthorized: false
+        }
       };
     }
 
