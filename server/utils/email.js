@@ -14,7 +14,7 @@ const sendEmail = async ({ to, subject, html }) => {
         port: Number(settings.smtpPort) || 587,
         auth: { 
           user: settings.smtpUser, 
-          pass: settings.smtpPassword 
+          pass: settings.smtpPassword ? settings.smtpPassword.replace(/\s+/g, '') : '' 
         },
         secure: Number(settings.smtpPort) === 465,
         tls: {
@@ -28,7 +28,7 @@ const sendEmail = async ({ to, subject, html }) => {
         port: Number(process.env.EMAIL_PORT) || 587,
         auth: { 
           user: process.env.EMAIL_USER, 
-          pass: process.env.EMAIL_PASS 
+          pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : '' 
         },
         secure: Number(process.env.EMAIL_PORT) === 465,
         tls: {
