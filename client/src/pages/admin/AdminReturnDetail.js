@@ -3,6 +3,28 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { returnAPI } from '../../utils/api';
 import { toast } from 'react-toastify';
 
+const calculateRecommendedRefund = (rmaObj) => {
+  if (!rmaObj || !rmaObj.order) return 0;
+  
+  const itemPriceSum = rmaObj.items.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+  const orderSubtotal = rmaObj.order.subtotal || 0;
+  
+  if (orderSubtotal <= 0) return 0;
+  
+  // If it's a full return of all items, recommend the exact order total
+  if (Math.abs(itemPriceSum - orderSubtotal) < 0.1) {
+    return rmaObj.order.total || 0;
+  }
+  
+  // For partial returns, calculate proportional tax, shipping, and discount
+  const proportion = itemPriceSum / orderSubtotal;
+  const taxShare = (rmaObj.order.tax || 0) * proportion;
+  const shippingShare = (rmaObj.order.shipping || 0) * proportion;
+  const discountShare = (rmaObj.order.discount || 0) * proportion;
+  
+  return Math.round((itemPriceSum + taxShare + shippingShare - discountShare) * 100) / 100;
+};
+
 export default function AdminReturnDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,7 +47,8 @@ export default function AdminReturnDetail() {
         setStatus(res.data.rma.status);
         setAdminNotes(res.data.rma.adminNotes || '');
         setCustomerNotes(res.data.rma.customerNotes || '');
-        setRefundAmount(res.data.rma.refundAmount || res.data.rma.items.reduce((acc, i) => acc + (i.price * i.quantity), 0));
+        const recommended = calculateRecommendedRefund(res.data.rma);
+        setRefundAmount(res.data.rma.refundAmount || recommended);
       } catch (err) {
         toast.error('Failed to load RMA details');
         navigate('/admin/returns');
@@ -63,6 +86,13 @@ export default function AdminReturnDetail() {
   if (!rma) return <div className="loading-center">RMA not found</div>;
 
   const totalReturnVal = rma.items.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+  const recommendedRefundVal = calculateRecommendedRefund(rma);
+  
+  const orderSubtotal = rma.order?.subtotal || 0;
+  const proportion = orderSubtotal > 0 ? totalReturnVal / orderSubtotal : 0;
+  const taxShare = (rma.order?.tax || 0) * proportion;
+  const shippingShare = (rma.order?.shipping || 0) * proportion;
+  const discountShare = (rma.order?.discount || 0) * proportion;
 
   return (
     <div>
@@ -103,10 +133,32 @@ export default function AdminReturnDetail() {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #2e2c29', display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: 'var(--muted)', fontSize: '12px', textTransform: 'uppercase' }}>Subtotal Return Value</div>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--gold)' }}>₹{totalReturnVal.toLocaleString('en-IN')}</div>
+            <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #2e2c29', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px', fontSize: '14px', color: 'var(--muted)' }}>
+                <span>Items Subtotal:</span>
+                <span>₹{totalReturnVal.toLocaleString('en-IN')}</span>
+              </div>
+              {taxShare > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px', fontSize: '14px', color: 'var(--muted)' }}>
+                  <span>Proportional GST/Tax:</span>
+                  <span>₹{Math.round(taxShare).toLocaleString('en-IN')}</span>
+                </div>
+              )}
+              {shippingShare > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px', fontSize: '14px', color: 'var(--muted)' }}>
+                  <span>Proportional Shipping:</span>
+                  <span>₹{Math.round(shippingShare).toLocaleString('en-IN')}</span>
+                </div>
+              )}
+              {discountShare > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px', fontSize: '14px', color: 'var(--muted)' }}>
+                  <span>Proportional Discount:</span>
+                  <span>-₹{Math.round(discountShare).toLocaleString('en-IN')}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '250px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #2e2c29' }}>
+                <div style={{ color: 'var(--muted)', fontSize: '12px', textTransform: 'uppercase', alignSelf: 'center' }}>Total Return Value</div>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--gold)' }}>₹{Math.round(recommendedRefundVal).toLocaleString('en-IN')}</div>
               </div>
             </div>
           </div>
@@ -194,7 +246,7 @@ export default function AdminReturnDetail() {
                   <span style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--muted)' }}>₹</span>
                   <input type="number" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} className="form-input" style={{ paddingLeft: '28px' }} />
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--gold)', marginTop: '4px' }}>Recommend: ₹{totalReturnVal}</div>
+                <div style={{ fontSize: '11px', color: 'var(--gold)', marginTop: '4px' }}>Recommend: ₹{recommendedRefundVal} (Includes Tax & Shipping)</div>
               </div>
             )}
 

@@ -4,6 +4,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import { orderAPI, returnAPI, uploadAPI } from '../utils/api';
 import { createReturn } from '../store';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import '../styles/return-request.css';
 
 const STEPS = ['Select Items', 'Request Details', 'Review & Submit'];
 
@@ -163,390 +166,406 @@ export default function ReturnRequestPage() {
 
   if (!eligibility.eligible) {
     return (
-      <div className="container" style={{ maxWidth: '600px', padding: '80px 20px', textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
-        <h2 style={{ fontFamily: 'var(--font-serif)', marginBottom: '12px' }}>Not Eligible for Return</h2>
-        <p style={{ color: 'var(--muted)', lineHeight: '1.6', marginBottom: '32px' }}>{eligibility.reason}</p>
-        <button className="btn btn-outline" onClick={() => navigate('/profile')}>Back to My Orders</button>
-      </div>
+      <>
+        <Header />
+        <div className="return-container" style={{ maxWidth: '600px', padding: '80px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '24px' }}>⚠️</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--maroon)', fontSize: '2rem', marginBottom: '16px' }}>Not Eligible for Return</h2>
+          <p style={{ color: 'var(--text-secondary)', lineHeight: '1.7', marginBottom: '32px' }}>{eligibility.reason}</p>
+          <button className="btn btn-outline" onClick={() => navigate('/profile')}>Back to My Orders</button>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className="container" style={{ maxWidth: '800px', padding: '40px 20px' }}>
-      <div className="page-header" style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', marginBottom: '8px' }}>Request Return</h1>
-        <p style={{ color: 'var(--muted)' }}>Order #{order?.orderNumber}</p>
-      </div>
+    <>
+      <Header />
+      <div className="return-container">
+        <div className="return-header">
+          <h1>Request Return</h1>
+          <p>Order #{order?.orderNumber}</p>
+        </div>
 
-      {/* Progress Bar */}
-      <div className="progress-steps" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '60px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: '15px', left: '0', right: '0', height: '2px', background: '#2e2c29', zIndex: '0' }} />
-        <div style={{ position: 'absolute', top: '15px', left: '0', width: `${((step - 1) / (STEPS.length - 1)) * 100}%`, height: '2px', background: 'var(--gold)', zIndex: '0', transition: '0.3s ease' }} />
-        {STEPS.map((s, i) => (
-          <div key={s} style={{ zIndex: '1', textAlign: 'center', width: '33.33%' }}>
-            <div style={{ 
-              width: '32px', height: '32px', borderRadius: '50%', background: step > i + 1 ? 'var(--gold)' : step === i + 1 ? 'var(--bg-card)' : 'var(--bg)',
-              border: `2px solid ${step >= i + 1 ? 'var(--gold)' : '#2e2c29'}`,
-              color: step > i + 1 ? '#000' : step === i + 1 ? 'var(--gold)' : 'var(--muted)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px',
-              fontSize: '14px', fontWeight: '700'
-            }}>
-              {step > i + 1 ? '✓' : i + 1}
-            </div>
-            <div style={{ fontSize: '12px', fontWeight: step === i + 1 ? '600' : '400', color: step >= i + 1 ? 'var(--text)' : 'var(--muted)' }}>{s}</div>
-          </div>
-        ))}
-      </div>
+        {/* Progress Bar */}
+        <div className="return-stepper">
+          <div className="return-stepper-line" />
+          <div className="return-stepper-progress" style={{ width: `${((step - 1) / (STEPS.length - 1)) * 100}%` }} />
+          {STEPS.map((s, i) => {
+            const isCompleted = step > i + 1;
+            const isActive = step === i + 1;
+            return (
+              <div key={s} className={`return-step-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
+                <div className="return-step-circle">
+                  {isCompleted ? '✓' : i + 1}
+                </div>
+                <div className="return-step-label">{s}</div>
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Step 1: Select Items */}
-      {step === 1 && (
-        <div className="step-content animate-fade-in">
-          <div className="card" style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '16px', marginBottom: '20px' }}>Which items would you like to return?</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {order?.items.map(item => {
-                const isSelected = selectedItems.find(i => i.orderItem === item._id);
-                return (
-                  <div key={item._id} onClick={() => toggleItem(item)} style={{ 
-                    display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', border: `1px solid ${isSelected ? 'var(--gold)' : '#2e2c29'}`, 
-                    borderRadius: '8px', cursor: 'pointer', background: isSelected ? 'rgba(201, 168, 76, 0.05)' : 'transparent', transition: '0.2s'
-                  }}>
-                    <div style={{ width: '20px', height: '20px', border: '2px solid var(--gold)', borderRadius: '4px', background: isSelected ? 'var(--gold)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {isSelected && <span style={{ color: '#000', fontSize: '14px' }}>✓</span>}
-                    </div>
-                    <img src={item.product.images?.[0]} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '500', fontSize: '14px' }}>{item.product.name}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--muted)' }}>Qty: {item.quantity} • ₹{item.price.toLocaleString('en-IN')}</div>
-                    </div>
-                    {isSelected && (
-                      <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <select value={isSelected.quantity} onChange={e => updateItemQty(item._id, Number(e.target.value))} className="form-input" style={{ width: '60px', padding: '4px' }}>
-                          {[...Array(item.quantity)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
-                        </select>
-                        <select value={isSelected.condition} onChange={e => updateItemCondition(item._id, e.target.value)} className="form-input" style={{ width: '100px', padding: '4px' }}>
-                          <option value="unopened">Unopened</option>
-                          <option value="opened">Opened</option>
-                          <option value="damaged">Damaged</option>
-                        </select>
+        {/* Step 1: Select Items */}
+        {step === 1 && (
+          <div className="step-content animate-fade-in">
+            <div className="return-card">
+              <h3 className="return-card-title">Which items would you like to return?</h3>
+              <div className="return-items-stack">
+                {order?.items.map(item => {
+                  const isSelected = selectedItems.find(i => i.orderItem === item._id);
+                  return (
+                    <div 
+                      key={item._id} 
+                      onClick={() => toggleItem(item)} 
+                      className={`return-item-row ${isSelected ? 'selected' : ''}`}
+                    >
+                      <div className="return-checkbox">
+                        {isSelected && <span className="return-checkbox-tick">✓</span>}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn btn-gold" disabled={selectedItems.length === 0} onClick={() => setStep(2)}>Continue</button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Request Details */}
-      {step === 2 && (
-        <div className="step-content animate-fade-in">
-          <div className="card" style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '16px', marginBottom: '20px' }}>What would you like to do?</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '32px' }}>
-              {[
-                { id: 'return', title: 'Return & Refund', desc: 'Get your money back' },
-                { id: 'exchange', title: 'Exchange', desc: 'Swap for another size/item' },
-                { id: 'refund', title: 'Refund Only', desc: 'For missing/damaged items' }
-              ].map(t => {
-                const isEligible = eligibility.eligibility?.[t.id]?.eligible !== false;
-                const reason = eligibility.eligibility?.[t.id]?.reason;
-                
-                return (
-                  <div key={t.id} 
-                    onClick={() => isEligible && setReturnType(t.id)} 
-                    style={{ 
-                      padding: '16px', textAlign: 'center', 
-                      border: `1px solid ${returnType === t.id ? 'var(--gold)' : '#2e2c29'}`, 
-                      borderRadius: '8px', cursor: isEligible ? 'pointer' : 'not-allowed', 
-                      background: returnType === t.id ? 'rgba(201, 168, 76, 0.05)' : 'transparent',
-                      opacity: isEligible ? 1 : 0.5,
-                      position: 'relative'
-                    }}
-                    title={!isEligible ? reason : ''}
-                  >
-                    <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '4px' }}>{t.title}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{t.desc}</div>
-                    {!isEligible && <div style={{ fontSize: '9px', color: 'var(--red)', marginTop: '4px', fontStyle: 'italic' }}>Blocked by store policy</div>}
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '24px' }}>
-              <label className="form-label">Reason for Return</label>
-              <select value={reason} onChange={e => setReason(e.target.value)} className="form-input">
-                <option value="defective">Defective product</option>
-                <option value="wrong_item">Wrong item sent</option>
-                <option value="not_as_described">Not as described</option>
-                <option value="size_issue">Size/fit issue</option>
-                <option value="changed_mind">Changed my mind</option>
-                <option value="damaged_in_transit">Damaged in transit</option>
-                <option value="missing_parts">Missing parts</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '24px' }}>
-              <label className="form-label">Additional Details</label>
-              <textarea value={reasonDetails} onChange={e => setReasonDetails(e.target.value)} className="form-input" rows="3" placeholder="Tell us more about the issue..." />
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '24px' }}>
-              <label className="form-label">Photos (Optional)</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
-                {photos.map(p => (
-                  <div key={p} style={{ position: 'relative', aspectRatio: '1/1', border: '1px solid #2e2c29', borderRadius: '4px', overflow: 'hidden' }}>
-                    <img src={p} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button onClick={() => removePhoto(p)} style={{ position: 'absolute', top: '2px', right: '2px', background: '#e54b4b', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', fontSize: '12px', cursor: 'pointer' }}>×</button>
-                  </div>
-                ))}
-                {photos.length < 4 && (
-                  <label style={{ 
-                    aspectRatio: '1/1', border: '2px dashed #2e2c29', borderRadius: '4px', display: 'flex', flexDirection: 'column', 
-                    alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--muted)', fontSize: '11px' 
-                  }}>
-                    <span style={{ fontSize: '20px' }}>{uploading ? '⌛' : '+'}</span>
-                    <span>Upload</span>
-                    <input type="file" multiple hidden onChange={handlePhotoUpload} accept="image/*" />
-                  </label>
-                )}
-              </div>
-            </div>
-
-            {returnType !== 'exchange' && (
-              <div className="form-group">
-                <label className="form-label">Preferred Refund Method</label>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  {[
-                    { id: 'original_payment', label: 'Original Payment' },
-                    { id: 'store_credit', label: 'Store Credit (+5% Bonus)' },
-                    { id: 'bank_transfer', label: 'Bank Transfer' }
-                  ].map(m => (
-                    <div key={m.id} onClick={() => setRefundMethod(m.id)} style={{ 
-                      flex: 1, padding: '12px', textAlign: 'center', border: `1px solid ${refundMethod === m.id ? 'var(--gold)' : '#2e2c29'}`, 
-                      borderRadius: '8px', cursor: 'pointer', fontSize: '12px', background: refundMethod === m.id ? 'rgba(201, 168, 76, 0.05)' : 'transparent'
-                    }}>
-                      {m.label}
+                      <img src={item.product.images?.[0]} alt="" className="return-item-thumb" />
+                      <div className="return-item-details">
+                        <div className="return-item-name">{item.product.name}</div>
+                        <div className="return-item-meta">Qty: {item.quantity} • ₹{item.price.toLocaleString('en-IN')}</div>
+                      </div>
+                      {isSelected && (
+                        <div onClick={e => e.stopPropagation()} className="return-item-inputs">
+                          <select 
+                            value={isSelected.quantity} 
+                            onChange={e => updateItemQty(item._id, Number(e.target.value))} 
+                            className="return-select" 
+                            style={{ width: '64px' }}
+                          >
+                            {[...Array(item.quantity)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
+                          </select>
+                          <select 
+                            value={isSelected.condition} 
+                            onChange={e => updateItemCondition(item._id, e.target.value)} 
+                            className="return-select" 
+                            style={{ width: '120px' }}
+                          >
+                            <option value="unopened">Unopened</option>
+                            <option value="opened">Opened</option>
+                            <option value="damaged">Damaged</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
-            
-            {/* Address Selector */}
-            <div className="form-group" style={{ marginTop: '24px' }}>
-              <label className="form-label">Pickup Address Selection</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${addressSource === 'shipping' ? 'btn-gold' : 'btn-outline'}`}
-                  onClick={() => setAddressSource('shipping')}
-                  style={{ fontSize: '12px' }}
-                >
-                  Shipping Address
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${addressSource === 'billing' ? 'btn-gold' : 'btn-outline'}`}
-                  onClick={() => setAddressSource('billing')}
-                  style={{ fontSize: '12px' }}
-                >
-                  Billing Address
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${addressSource === 'saved' ? 'btn-gold' : 'btn-outline'}`}
-                  onClick={() => setAddressSource('saved')}
-                  style={{ fontSize: '12px' }}
-                  disabled={!user.addresses?.length}
-                >
-                  Saved Address
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${addressSource === 'other' ? 'btn-gold' : 'btn-outline'}`}
-                  onClick={() => setAddressSource('other')}
-                  style={{ fontSize: '12px' }}
-                >
-                  New Address
-                </button>
+            </div>
+            <div className="return-actions-row" style={{ justifyContent: 'flex-end' }}>
+              <button className="btn btn-gold" disabled={selectedItems.length === 0} onClick={() => setStep(2)}>Continue</button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Request Details */}
+        {step === 2 && (
+          <div className="step-content animate-fade-in">
+            <div className="return-card">
+              <h3 className="return-card-title">What would you like to do?</h3>
+              <div className="return-type-grid">
+                {[
+                  { id: 'return', title: 'Return & Refund', desc: 'Get your money back' },
+                  { id: 'exchange', title: 'Exchange', desc: 'Swap for another size/item' },
+                  { id: 'refund', title: 'Refund Only', desc: 'For missing/damaged items' }
+                ].map(t => {
+                  const isEligible = eligibility.eligibility?.[t.id]?.eligible !== false;
+                  const reason = eligibility.eligibility?.[t.id]?.reason;
+                  const isSelected = returnType === t.id;
+                  
+                  return (
+                    <div key={t.id} 
+                      onClick={() => isEligible && setReturnType(t.id)} 
+                      className={`return-type-card ${isSelected ? 'selected' : ''} ${!isEligible ? 'disabled' : ''}`}
+                      title={!isEligible ? reason : ''}
+                    >
+                      <div className="return-type-title">{t.title}</div>
+                      <div className="return-type-desc">{t.desc}</div>
+                      {!isEligible && <div className="return-type-blocked">Blocked by store policy</div>}
+                    </div>
+                  );
+                })}
               </div>
 
-              {addressSource === 'saved' && (
-                <select 
-                  className="form-input" 
-                  value={user.addresses.findIndex(a => JSON.stringify(a) === JSON.stringify(pickupAddress))}
-                  onChange={e => setPickupAddress(user.addresses[e.target.value])}
-                >
-                  {user.addresses?.map((a, i) => (
-                    <option key={i} value={i}>{a.addressLine1}, {a.city}</option>
-                  ))}
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label className="form-label">Reason for Return</label>
+                <select value={reason} onChange={e => setReason(e.target.value)} className="form-input return-select" style={{ width: '100%', paddingRight: '40px', backgroundPosition: 'right 16px center', backgroundSize: '16px' }}>
+                  <option value="defective">Defective product</option>
+                  <option value="wrong_item">Wrong item sent</option>
+                  <option value="not_as_described">Not as described</option>
+                  <option value="size_issue">Size/fit issue</option>
+                  <option value="changed_mind">Changed my mind</option>
+                  <option value="damaged_in_transit">Damaged in transit</option>
+                  <option value="missing_parts">Missing parts</option>
+                  <option value="other">Other</option>
                 </select>
-              )}
+              </div>
 
-              {addressSource === 'other' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'var(--ink-mid)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <input 
-                    className="form-input" 
-                    placeholder="First Name" 
-                    value={otherAddress.firstName} 
-                    onChange={e => setOtherAddress({...otherAddress, firstName: e.target.value})} 
-                  />
-                  <input 
-                    className="form-input" 
-                    placeholder="Last Name" 
-                    value={otherAddress.lastName} 
-                    onChange={e => setOtherAddress({...otherAddress, lastName: e.target.value})} 
-                  />
-                  <input 
-                    className="form-input" 
-                    style={{ gridColumn: 'span 2' }} 
-                    placeholder="Address Line 1" 
-                    value={otherAddress.addressLine1} 
-                    onChange={e => setOtherAddress({...otherAddress, addressLine1: e.target.value})} 
-                  />
-                  <input 
-                    className="form-input" 
-                    placeholder="City" 
-                    value={otherAddress.city} 
-                    onChange={e => setOtherAddress({...otherAddress, city: e.target.value})} 
-                  />
-                  <input 
-                    className="form-input" 
-                    placeholder="State" 
-                    value={otherAddress.state} 
-                    onChange={e => setOtherAddress({...otherAddress, state: e.target.value})} 
-                  />
-                  <input 
-                    className="form-input" 
-                    placeholder="Pincode" 
-                    value={otherAddress.pincode} 
-                    onChange={e => setOtherAddress({...otherAddress, pincode: e.target.value})} 
-                  />
-                </div>
-              )}
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label className="form-label">Additional Details</label>
+                <textarea value={reasonDetails} onChange={e => setReasonDetails(e.target.value)} className="form-input" rows="3" placeholder="Tell us more about the issue..." style={{ padding: '12px 16px', minHeight: '100px', resize: 'vertical' }} />
+              </div>
 
-              {addressSource === 'shipping' && order && (
-                <div style={{ padding: '12px', background: 'var(--ink-mid)', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '13px' }}>
-                  <strong>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</strong><br/>
-                  {order.shippingAddress.address}<br/>
-                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
-                </div>
-              )}
-
-              {addressSource === 'billing' && order && (
-                <div style={{ padding: '12px', background: 'var(--ink-mid)', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '13px' }}>
-                  <strong>{order.billingAddress?.firstName || order.shippingAddress.firstName} {order.billingAddress?.lastName || order.shippingAddress.lastName}</strong><br/>
-                  {order.billingAddress?.address || order.shippingAddress.address}<br/>
-                  {order.billingAddress?.city || order.shippingAddress.city}, {order.billingAddress?.state || order.shippingAddress.state} {order.billingAddress?.zipCode || order.shippingAddress.zipCode}
-                </div>
-              )}
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <button className="btn btn-outline" onClick={() => setStep(1)}>Back</button>
-            <button className="btn btn-gold" onClick={() => setStep(3)}>Review Request</button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Review & Submit */}
-      {step === 3 && (
-        <div className="step-content animate-fade-in">
-          <div className="card" style={{ marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '16px', marginBottom: '24px' }}>Review Your Request</h3>
-            
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>Items to Return</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {selectedItems.map(item => (
-                  <div key={item.orderItem} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img src={item.image} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                    <div style={{ flex: 1, fontSize: '14px' }}>
-                      <strong>{item.quantity}x</strong> {item.name}
-                      <div style={{ fontSize: '11px', color: 'var(--muted)' }}>Condition: {item.condition}</div>
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label className="form-label">Photos (Optional)</label>
+                <div className="return-upload-grid">
+                  {photos.map(p => (
+                    <div key={p} className="return-photo-card">
+                      <img src={p} alt="" />
+                      <button onClick={() => removePhoto(p)} className="return-photo-remove">×</button>
                     </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}>₹{(item.price * item.quantity).toLocaleString('en-IN')}</div>
+                  ))}
+                  {photos.length < 4 && (
+                    <label className="return-upload-trigger">
+                      <span className="return-upload-icon">{uploading ? '⌛' : '+'}</span>
+                      <span>Upload</span>
+                      <input type="file" multiple hidden onChange={handlePhotoUpload} accept="image/*" />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {returnType !== 'exchange' && (
+                <div className="form-group" style={{ marginBottom: '32px' }}>
+                  <label className="form-label">Preferred Refund Method</label>
+                  <div className="return-refund-row">
+                    {[
+                      { id: 'original_payment', label: 'Original Payment' },
+                      { id: 'store_credit', label: 'Store Credit (+5% Bonus)' },
+                      { id: 'bank_transfer', label: 'Bank Transfer' }
+                    ].map(m => (
+                      <div key={m.id} 
+                        onClick={() => setRefundMethod(m.id)} 
+                        className={`return-refund-card ${refundMethod === m.id ? 'selected' : ''}`}
+                      >
+                        {m.label}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
+              
+              {/* Address Selector */}
+              <div className="form-group">
+                <label className="form-label">Pickup Address Selection</label>
+                <div className="return-address-sources">
+                  <button 
+                    type="button"
+                    className={`return-address-btn ${addressSource === 'shipping' ? 'active' : ''}`}
+                    onClick={() => setAddressSource('shipping')}
+                  >
+                    Shipping Address
+                  </button>
+                  <button 
+                    type="button"
+                    className={`return-address-btn ${addressSource === 'billing' ? 'active' : ''}`}
+                    onClick={() => setAddressSource('billing')}
+                  >
+                    Billing Address
+                  </button>
+                  <button 
+                    type="button"
+                    className={`return-address-btn ${addressSource === 'saved' ? 'active' : ''}`}
+                    onClick={() => setAddressSource('saved')}
+                    disabled={!user?.addresses?.length}
+                  >
+                    Saved Address
+                  </button>
+                  <button 
+                    type="button"
+                    className={`return-address-btn ${addressSource === 'other' ? 'active' : ''}`}
+                    onClick={() => setAddressSource('other')}
+                  >
+                    New Address
+                  </button>
+                </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px', padding: '16px 0', borderTop: '1px solid #2e2c29', borderBottom: '1px solid #2e2c29' }}>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Return Type</div>
-                <div style={{ fontSize: '14px', color: 'var(--gold)', fontWeight: '600' }}>{returnType.toUpperCase()}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Reason</div>
-                <div style={{ fontSize: '14px' }}>{reason.replace(/_/g, ' ')}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Estimated Refund</div>
-                <div style={{ fontSize: '14px', fontWeight: '600' }}>₹{selectedItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString('en-IN')}</div>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Refund Method</div>
-                <div style={{ fontSize: '14px' }}>{refundMethod.replace(/_/g, ' ')}</div>
-              </div>
-            </div>
+                {addressSource === 'saved' && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <select 
+                      className="form-input return-select" 
+                      value={user?.addresses?.findIndex(a => JSON.stringify(a) === JSON.stringify(pickupAddress))}
+                      onChange={e => setPickupAddress(user.addresses[e.target.value])}
+                      style={{ width: '100%', paddingRight: '40px', backgroundPosition: 'right 16px center', backgroundSize: '16px' }}
+                    >
+                      {user?.addresses?.map((a, i) => (
+                        <option key={i} value={i}>{a.addressLine1}, {a.city}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px', textTransform: 'uppercase' }}>Pickup Address</div>
-              <div style={{ fontSize: '13px', lineHeight: '1.6' }}>
+                {addressSource === 'other' && (
+                  <div className="return-new-address-form" style={{ marginBottom: '16px' }}>
+                    <input 
+                      className="form-input" 
+                      placeholder="First Name" 
+                      value={otherAddress.firstName} 
+                      onChange={e => setOtherAddress({...otherAddress, firstName: e.target.value})} 
+                    />
+                    <input 
+                      className="form-input" 
+                      placeholder="Last Name" 
+                      value={otherAddress.lastName} 
+                      onChange={e => setOtherAddress({...otherAddress, lastName: e.target.value})} 
+                    />
+                    <input 
+                      className="form-input" 
+                      style={{ gridColumn: 'span 2' }} 
+                      placeholder="Address Line 1" 
+                      value={otherAddress.addressLine1} 
+                      onChange={e => setOtherAddress({...otherAddress, addressLine1: e.target.value})} 
+                    />
+                    <input 
+                      className="form-input" 
+                      placeholder="City" 
+                      value={otherAddress.city} 
+                      onChange={e => setOtherAddress({...otherAddress, city: e.target.value})} 
+                    />
+                    <input 
+                      className="form-input" 
+                      placeholder="State" 
+                      value={otherAddress.state} 
+                      onChange={e => setOtherAddress({...otherAddress, state: e.target.value})} 
+                    />
+                    <input 
+                      className="form-input" 
+                      style={{ gridColumn: 'span 2' }}
+                      placeholder="Pincode" 
+                      value={otherAddress.pincode} 
+                      onChange={e => setOtherAddress({...otherAddress, pincode: e.target.value})} 
+                    />
+                  </div>
+                )}
+
                 {addressSource === 'shipping' && order && (
-                  <>
-                    <strong>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</strong><br/>
+                  <div className="return-address-preview">
+                    <strong>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</strong>
                     {order.shippingAddress.address}<br/>
                     {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
-                  </>
+                  </div>
                 )}
+
                 {addressSource === 'billing' && order && (
-                  <>
-                    <strong>{order.billingAddress?.firstName || order.shippingAddress.firstName} {order.billingAddress?.lastName || order.shippingAddress.lastName}</strong><br/>
+                  <div className="return-address-preview">
+                    <strong>{order.billingAddress?.firstName || order.shippingAddress.firstName} {order.billingAddress?.lastName || order.shippingAddress.lastName}</strong>
                     {order.billingAddress?.address || order.shippingAddress.address}<br/>
                     {order.billingAddress?.city || order.shippingAddress.city}, {order.billingAddress?.state || order.shippingAddress.state} {order.billingAddress?.zipCode || order.shippingAddress.zipCode}
-                  </>
+                  </div>
                 )}
+
                 {addressSource === 'saved' && pickupAddress && (
-                  <>
-                    <strong>{pickupAddress.firstName || user.name} {pickupAddress.lastName}</strong><br/>
+                  <div className="return-address-preview">
+                    <strong>{pickupAddress.firstName || user?.name} {pickupAddress.lastName}</strong>
                     {pickupAddress.addressLine1}<br/>
                     {pickupAddress.city}, {pickupAddress.state} {pickupAddress.pincode}
-                  </>
-                )}
-                {addressSource === 'other' && (
-                  <>
-                    <strong>{otherAddress.firstName} {otherAddress.lastName}</strong><br/>
-                    {otherAddress.addressLine1}<br/>
-                    {otherAddress.city}, {otherAddress.state} {otherAddress.pincode}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
-
-            <div style={{ padding: '16px', background: 'rgba(201, 168, 76, 0.05)', borderRadius: '8px', border: '1px solid var(--gold)', marginBottom: '24px' }}>
-              <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>Returns Policy Notice</div>
-              <p style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: '1.5', margin: '0' }}>
-                We want you to love every LuxeStore purchase. If you're not completely satisfied, you may return most items within 7 days of delivery. 
-                Items must be unused, unworn, and in original packaging. Refunds are processed within 5–7 business days.
-              </p>
+            <div className="return-actions-row">
+              <button className="btn btn-outline" onClick={() => setStep(1)}>Back</button>
+              <button className="btn btn-gold" onClick={() => setStep(3)}>Review Request</button>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <button className="btn btn-outline" onClick={() => setStep(2)}>Back</button>
-            <button className="btn btn-gold" onClick={handleSubmit} disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit Return Request'}
-            </button>
+        )}
+
+        {/* Step 3: Review & Submit */}
+        {step === 3 && (
+          <div className="step-content animate-fade-in">
+            <div className="return-card">
+              <h3 className="return-card-title">Review Your Request</h3>
+              
+              <div style={{ marginBottom: '28px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '700' }}>Items to Return</div>
+                <div className="return-review-list">
+                  {selectedItems.map(item => (
+                    <div key={item.orderItem} className="return-review-item">
+                      <img src={item.image} alt="" className="return-review-thumb" />
+                      <div className="return-review-info">
+                        <strong>{item.quantity}x</strong> {item.name}
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>Condition: <span style={{ textTransform: 'capitalize' }}>{item.condition}</span></div>
+                      </div>
+                      <div className="return-review-price">₹{(item.price * item.quantity).toLocaleString('en-IN')}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="return-review-grid">
+                <div>
+                  <div className="return-review-label">Return Type</div>
+                  <div className="return-review-value highlight">{returnType.toUpperCase()}</div>
+                </div>
+                <div>
+                  <div className="return-review-label">Reason</div>
+                  <div className="return-review-value" style={{ textTransform: 'capitalize' }}>{reason.replace(/_/g, ' ')}</div>
+                </div>
+                <div>
+                  <div className="return-review-label">Estimated Refund</div>
+                  <div className="return-review-value" style={{ color: 'var(--maroon)', fontWeight: '700' }}>₹{selectedItems.reduce((acc, i) => acc + (i.price * i.quantity), 0).toLocaleString('en-IN')}</div>
+                </div>
+                <div>
+                  <div className="return-review-label">Refund Method</div>
+                  <div className="return-review-value" style={{ textTransform: 'capitalize' }}>{refundMethod.replace(/_/g, ' ')}</div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '28px' }}>
+                <div className="return-review-label" style={{ fontWeight: '700', marginBottom: '8px' }}>Pickup Address</div>
+                <div className="return-address-preview">
+                  {addressSource === 'shipping' && order && (
+                    <>
+                      <strong>{order.shippingAddress.firstName} {order.shippingAddress.lastName}</strong>
+                      {order.shippingAddress.address}<br/>
+                      {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+                    </>
+                  )}
+                  {addressSource === 'billing' && order && (
+                    <>
+                      <strong>{order.billingAddress?.firstName || order.shippingAddress.firstName} {order.billingAddress?.lastName || order.shippingAddress.lastName}</strong>
+                      {order.billingAddress?.address || order.shippingAddress.address}<br/>
+                      {order.billingAddress?.city || order.shippingAddress.city}, {order.billingAddress?.state || order.shippingAddress.state} {order.billingAddress?.zipCode || order.shippingAddress.zipCode}
+                    </>
+                  )}
+                  {addressSource === 'saved' && pickupAddress && (
+                    <>
+                      <strong>{pickupAddress.firstName || user?.name} {pickupAddress.lastName}</strong>
+                      {pickupAddress.addressLine1}<br/>
+                      {pickupAddress.city}, {pickupAddress.state} {pickupAddress.pincode}
+                    </>
+                  )}
+                  {addressSource === 'other' && (
+                    <>
+                      <strong>{otherAddress.firstName} {otherAddress.lastName}</strong>
+                      {otherAddress.addressLine1}<br/>
+                      {otherAddress.city}, {otherAddress.state} {otherAddress.pincode}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="return-policy-alert">
+                <div className="return-policy-title">Returns Policy Notice</div>
+                <p className="return-policy-text">
+                  We want you to love every LuxeStore purchase. If you're not completely satisfied, you may return most items within 7 days of delivery. 
+                  Items must be unused, unworn, and in original packaging. Refunds are processed within 5–7 business days.
+                </p>
+              </div>
+            </div>
+            <div className="return-actions-row">
+              <button className="btn btn-outline" onClick={() => setStep(2)}>Back</button>
+              <button className="btn btn-gold" onClick={handleSubmit} disabled={loading}>
+                {loading ? 'Submitting...' : 'Submit Return Request'}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+      <Footer />
+    </>
   );
 }
