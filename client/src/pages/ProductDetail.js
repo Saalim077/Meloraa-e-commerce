@@ -130,7 +130,8 @@ export default function ProductDetail() {
       quantity: quantity,
       variant: selectedVariant?.name,
       slug: product.slug || id,
-      stock: currentStock
+      stock: currentStock,
+      taxClass: product.taxClass || ''
     }));
 
     if (type === 'cart') {

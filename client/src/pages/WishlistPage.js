@@ -16,6 +16,7 @@ export default function WishlistPage() {
             name: product.name,
             price: product.price,
             image: product.images?.[0] || product.image,
+            taxClass: product.taxClass || '',
         }));
         dispatch(openCart());
     };

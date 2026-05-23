@@ -219,6 +219,7 @@ export default function StoreFront() {
                             name: product.name,
                             price: product.price, // Keep base price for checkout extraction if needed, but display is handled by settings
                             image: getProductImage(product),
+                            taxClass: product.taxClass || ''
                           }));
                           dispatch(openCart());
                         }}
