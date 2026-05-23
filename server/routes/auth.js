@@ -7,6 +7,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { protect } = require('../middleware/auth');
 const sendEmail = require('../utils/email');
+const emailTemplates = require('../utils/emailTemplates');
 const { body, param } = require('express-validator');
 const validate = require('../middleware/validate');
 
@@ -72,20 +73,18 @@ router.post('/register', accountCreationLimiter, [
 
         console.log(`[OTP SIMULATION] Generated OTP ${plainOtp} for pending user ${existing.email}`);
         if (isEmail) {
-          sendEmail({
-            to: existing.email,
-            subject: 'Your LuxeStore Registration OTP',
-            html: `
-              <div style="max-width:600px;margin:0 auto;background:#0f0e0d;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;text-align:center;">
-                <h1 style="color:#d4af37;letter-spacing:4px;">LUXESTORE</h1>
-                <p style="color:#e8e0d0;font-size:16px;">Your One-Time Password (OTP) for account verification is:</p>
-                <div style="margin:32px 0;padding:20px;background:#1a1917;border:1px solid #33312e;border-radius:8px;font-size:32px;font-weight:700;letter-spacing:8px;color:#d4af37;">
-                  ${plainOtp}
-                </div>
-                <p style="color:#a09882;font-size:12px;">This OTP is valid for 10 minutes.</p>
-              </div>
-            `,
-          }).catch(e => console.error('OTP Email Failed:', e));
+          (async () => {
+            try {
+              const emailData = await emailTemplates.buildRegistrationOtpEmail(existing, plainOtp);
+              await sendEmail({
+                to: existing.email,
+                subject: emailData.subject,
+                html: emailData.html
+              });
+            } catch (e) {
+              console.error('OTP Email Failed:', e.message);
+            }
+          })();
         } else {
           console.log(`[SMS TRANSPORT] Sending Registration OTP ${plainOtp} to phone number ${existing.phone}`);
         }
@@ -110,20 +109,18 @@ router.post('/register', accountCreationLimiter, [
 
     console.log(`[OTP SIMULATION] Generated OTP ${plainOtp} for new user ${user.email}`);
     if (isEmail) {
-      sendEmail({
-        to: user.email,
-        subject: 'Your LuxeStore Registration OTP',
-        html: `
-          <div style="max-width:600px;margin:0 auto;background:#0f0e0d;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;text-align:center;">
-            <h1 style="color:#d4af37;letter-spacing:4px;">LUXESTORE</h1>
-            <p style="color:#e8e0d0;font-size:16px;">Your One-Time Password (OTP) for account verification is:</p>
-            <div style="margin:32px 0;padding:20px;background:#1a1917;border:1px solid #33312e;border-radius:8px;font-size:32px;font-weight:700;letter-spacing:8px;color:#d4af37;">
-              ${plainOtp}
-            </div>
-            <p style="color:#a09882;font-size:12px;">This OTP is valid for 10 minutes.</p>
-          </div>
-        `,
-      }).catch(e => console.error('OTP Email Failed:', e));
+      (async () => {
+        try {
+          const emailData = await emailTemplates.buildRegistrationOtpEmail(user, plainOtp);
+          await sendEmail({
+            to: user.email,
+            subject: emailData.subject,
+            html: emailData.html
+          });
+        } catch (e) {
+          console.error('OTP Email Failed:', e.message);
+        }
+      })();
     } else {
       console.log(`[SMS TRANSPORT] Sending Registration OTP ${plainOtp} to phone number ${user.phone}`);
     }
@@ -308,24 +305,18 @@ router.post('/forgot-password', passwordResetLimiter, [
     console.log(`[RESET SIMULATION] Password Reset URL for ${user.email || user.phone}: ${resetUrl}`);
     
     if (user.email && user.email.includes('@') && !user.email.includes('luxestore-temp.com')) {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: 'Password Reset - MELORAA',
-          html: `
-            <div style="max-width:600px;margin:0 auto;background:#faf8f6;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;border:1px solid #e5e2df;border-radius:12px;">
-              <h1 style="color:#4f0c10;letter-spacing:4px;text-align:center;font-family:Georgia,serif;">MELORAA</h1>
-              <p style="color:#1a1a1a;font-size:14px;line-height:1.6;">You requested a password reset. Click the link below to set your new password:</p>
-              <div style="text-align:center;margin:24px 0;">
-                <a href="${resetUrl}" style="background:#4f0c10;color:white;padding:12px 32px;text-decoration:none;border-radius:8px;font-weight:700;display:inline-block;">Reset Password</a>
-              </div>
-              <p style="color:#8a8a8a;font-size:12px;">This link is valid for 30 minutes. If you did not request this reset, please ignore this email.</p>
-            </div>
-          `,
-        });
-      } catch (emailErr) {
-        console.error('Failed to send reset email:', emailErr);
-      }
+      (async () => {
+        try {
+          const emailData = await emailTemplates.buildPasswordResetEmail(user, resetUrl);
+          await sendEmail({
+            to: user.email,
+            subject: emailData.subject,
+            html: emailData.html
+          });
+        } catch (emailErr) {
+          console.error('Failed to send reset email:', emailErr.message);
+        }
+      })();
     } else if (user.phone) {
       console.log(`[SMS TRANSPORT] Password Reset Link for phone ${user.phone}: ${resetUrl}`);
     }

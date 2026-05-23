@@ -23,6 +23,14 @@ const connectDB = async () => {
   });
   isConnected = db.connections[0].readyState;
   console.log('✅ MongoDB connected');
+
+  // Seed default admin templates safely
+  try {
+    const { seedDefaultTemplates } = require('./utils/templateInitializer');
+    seedDefaultTemplates().catch(e => console.error('Failed to seed default templates:', e));
+  } catch (err) {
+    console.error('Failed to load templateInitializer:', err.message);
+  }
 };
 
 if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
@@ -138,7 +146,15 @@ if (process.env.VERCEL) {
 
     // Connect to MongoDB in the background (non-blocking)
     mongoose.connect(process.env.MONGO_URI)
-      .then(() => console.log('✅ MongoDB connected successfully'))
+      .then(() => {
+        console.log('✅ MongoDB connected successfully');
+        try {
+          const { seedDefaultTemplates } = require('./utils/templateInitializer');
+          seedDefaultTemplates().catch(e => console.error('Failed to seed default templates:', e));
+        } catch (err) {
+          console.error('Failed to load templateInitializer:', err.message);
+        }
+      })
       .catch((err) => {
         console.warn('⚠️  MongoDB connection failed:', err.message);
         console.warn('   Running in demo mode — set MONGO_URI in server/.env to connect.');

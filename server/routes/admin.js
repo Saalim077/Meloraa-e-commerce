@@ -1,7 +1,9 @@
 const express = require('express');
-const { ActivityLog, InventoryAlert } = require('../models/Extended');
+const { ActivityLog, InventoryAlert, Settings } = require('../models/Extended');
 const Product = require('../models/Product');
 const { protect, authorize } = require('../middleware/auth');
+const sendEmail = require('../utils/email');
+const emailTemplates = require('../utils/emailTemplates');
 
 const router = express.Router();
 
@@ -137,13 +139,32 @@ const checkInventoryAlerts = async (productId) => {
 
     if (product.stock === 0) {
       if (!existingOutAlert) {
-        await InventoryAlert.create({
+        const newAlert = await InventoryAlert.create({
           product: productId,
           alertType: 'out_of_stock',
           threshold: 0,
           currentStock: 0,
           notificationSent: false
         });
+        // Send email notification safely (non-blocking)
+        (async () => {
+          try {
+            const settings = await Settings.findOne() || {};
+            const adminEmail = settings.email || process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
+            if (adminEmail) {
+              const emailData = await emailTemplates.buildAdminLowInventoryEmail(product, 'out_of_stock', 0, 0);
+              await sendEmail({
+                to: adminEmail,
+                subject: emailData.subject,
+                html: emailData.html
+              });
+              newAlert.notificationSent = true;
+              await newAlert.save();
+            }
+          } catch (e) {
+            console.error('Failed to send out of stock alert email:', e.message);
+          }
+        })();
       }
       // Resolve low stock alert if it exists
       if (existingLowAlert) {
@@ -153,13 +174,32 @@ const checkInventoryAlerts = async (productId) => {
       }
     } else if (product.stock <= lowStockThreshold) {
       if (!existingLowAlert) {
-        await InventoryAlert.create({
+        const newAlert = await InventoryAlert.create({
           product: productId,
           alertType: 'low_stock',
           threshold: lowStockThreshold,
           currentStock: product.stock,
           notificationSent: false
         });
+        // Send email notification safely (non-blocking)
+        (async () => {
+          try {
+            const settings = await Settings.findOne() || {};
+            const adminEmail = settings.email || process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
+            if (adminEmail) {
+              const emailData = await emailTemplates.buildAdminLowInventoryEmail(product, 'low_stock', product.stock, lowStockThreshold);
+              await sendEmail({
+                to: adminEmail,
+                subject: emailData.subject,
+                html: emailData.html
+              });
+              newAlert.notificationSent = true;
+              await newAlert.save();
+            }
+          } catch (e) {
+            console.error('Failed to send low stock alert email:', e.message);
+          }
+        })();
       } else {
         existingLowAlert.currentStock = product.stock;
         await existingLowAlert.save();

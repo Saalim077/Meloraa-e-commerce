@@ -529,6 +529,7 @@ export default function AdminSettings() {
                         <option value="notification">Notification</option>
                         <option value="order">Order</option>
                         <option value="user">User</option>
+                        <option value="admin">Admin</option>
                       </select>
                     </div>
                   </div>

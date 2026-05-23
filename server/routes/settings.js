@@ -67,7 +67,7 @@ router.post('/email-templates', protect, authorize('admin'), [
   body('name').trim().notEmpty().withMessage('Template name is required'),
   body('subject').trim().notEmpty().withMessage('Subject is required'),
   body('template').notEmpty().withMessage('Template content is required'),
-  body('type').optional().isIn(['order', 'user', 'notification']).withMessage('Invalid template type'),
+  body('type').optional().isIn(['order', 'user', 'notification', 'admin']).withMessage('Invalid template type'),
 ], validate, async (req, res) => {
   try {
     const { name, subject, template, variables, type } = req.body;

@@ -145,7 +145,7 @@ const emailTemplateSchema = new mongoose.Schema({
   subject: { type: String, required: true },
   template: { type: String, required: true }, // HTML template
   variables: [String], // {{variable}} placeholders
-  type: { type: String, enum: ['order', 'user', 'notification'], default: 'notification' },
+  type: { type: String, enum: ['order', 'user', 'notification', 'admin'], default: 'notification' },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 

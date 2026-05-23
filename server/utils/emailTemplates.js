@@ -239,5 +239,303 @@ module.exports = {
       </div>
     `;
     return { subject: 'LuxeStore Return Request Approved', html: baseTemplate(content, 'Return Approved') };
+  },
+
+  buildAdminNewOrderEmail: async (order) => {
+    const tmpl = await EmailTemplate.findOne({ name: 'admin_new_order', isActive: true });
+    
+    const orderId = order.orderNumber || order._id.toString();
+    const orderIdShort = orderId.slice(-8).toUpperCase();
+    const customerName = `${order.shippingAddress?.firstName || ''} ${order.shippingAddress?.lastName || ''}`.trim() || order.user?.name || 'Customer';
+    const customerEmail = order.shippingAddress?.email || order.user?.email || 'N/A';
+    const total = order.total?.toLocaleString('en-IN') || order.subtotal?.toLocaleString('en-IN') || 0;
+    const paymentMethod = order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment';
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+    const templateData = {
+      orderId,
+      orderIdShort,
+      customerName,
+      customerEmail,
+      total,
+      paymentMethod,
+      clientUrl
+    };
+
+    if (tmpl) {
+      return {
+        subject: parseTemplate(tmpl.subject, templateData),
+        html: parseTemplate(tmpl.template, templateData)
+      };
+    }
+
+    const content = `
+      <h1 class="title" style="color: #d4af37; text-align: center; letter-spacing: 2px;">New Order Received</h1>
+      <p class="text" style="text-align: center;">A new order has been placed on LuxeStore.</p>
+      
+      <div class="details-box">
+        <div class="details-row">
+          <span class="details-label">Order Number:</span>
+          <span class="details-value">#${orderIdShort}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Customer:</span>
+          <span class="details-value">${customerName} (${customerEmail})</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Total Amount:</span>
+          <span class="details-value highlight">₹${total}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Payment Method:</span>
+          <span class="details-value">${paymentMethod}</span>
+        </div>
+      </div>
+
+      <div class="btn-container" style="text-align: center;">
+        <a href="${clientUrl}/admin/orders" class="btn">View in Admin Panel</a>
+      </div>
+    `;
+    return {
+      subject: `New Order Received - #${orderIdShort}`,
+      html: baseTemplate(content, 'New Order')
+    };
+  },
+
+  buildAdminOrderCancelledEmail: async (order) => {
+    const tmpl = await EmailTemplate.findOne({ name: 'admin_order_cancelled', isActive: true });
+    
+    const orderId = order.orderNumber || order._id.toString();
+    const orderIdShort = orderId.slice(-8).toUpperCase();
+    const customerName = `${order.shippingAddress?.firstName || ''} ${order.shippingAddress?.lastName || ''}`.trim() || order.user?.name || 'Customer';
+    const customerEmail = order.shippingAddress?.email || order.user?.email || 'N/A';
+    const total = order.total?.toLocaleString('en-IN') || 0;
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+    const templateData = {
+      orderId,
+      orderIdShort,
+      customerName,
+      customerEmail,
+      total,
+      clientUrl
+    };
+
+    if (tmpl) {
+      return {
+        subject: parseTemplate(tmpl.subject, templateData),
+        html: parseTemplate(tmpl.template, templateData)
+      };
+    }
+
+    const content = `
+      <h1 class="title" style="color: #ff4d4d; text-align: center; letter-spacing: 2px;">Order Cancelled</h1>
+      <p class="text" style="text-align: center;">Order #${orderIdShort} has been cancelled.</p>
+      
+      <div class="details-box">
+        <div class="details-row">
+          <span class="details-label">Order Number:</span>
+          <span class="details-value">#${orderIdShort}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Customer:</span>
+          <span class="details-value">${customerName} (${customerEmail})</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Total Amount:</span>
+          <span class="details-value highlight">₹${total}</span>
+        </div>
+      </div>
+
+      <div class="btn-container" style="text-align: center;">
+        <a href="${clientUrl}/admin/orders" class="btn" style="background-color: #ff4d4d; color: #ffffff;">View in Admin Panel</a>
+      </div>
+    `;
+    return {
+      subject: `Order Cancelled Alert - #${orderIdShort}`,
+      html: baseTemplate(content, 'Order Cancelled')
+    };
+  },
+
+  buildAdminRefundRequestedEmail: async (order, returnReason = '', reasonDetails = '', rmaId = null) => {
+    const tmpl = await EmailTemplate.findOne({ name: 'admin_refund_requested', isActive: true });
+    
+    const orderId = order.orderNumber || order._id.toString();
+    const orderIdShort = orderId.slice(-8).toUpperCase();
+    const customerName = `${order.shippingAddress?.firstName || ''} ${order.shippingAddress?.lastName || ''}`.trim() || order.user?.name || 'Customer';
+    const customerEmail = order.shippingAddress?.email || order.user?.email || 'N/A';
+    const reason = returnReason || order.returnReason || 'Not specified';
+    const details = reasonDetails || order.returnReasonDetails || 'No additional details provided';
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const returnUrl = rmaId ? `${clientUrl}/admin/returns/${rmaId}` : `${clientUrl}/admin/returns`;
+
+    const templateData = {
+      orderId,
+      orderIdShort,
+      customerName,
+      customerEmail,
+      returnReason: reason,
+      reasonDetails: details,
+      clientUrl,
+      returnUrl
+    };
+
+    if (tmpl) {
+      return {
+        subject: parseTemplate(tmpl.subject, templateData),
+        html: parseTemplate(tmpl.template, templateData)
+      };
+    }
+
+    const content = `
+      <h1 class="title" style="color: #d4af37; text-align: center; letter-spacing: 2px;">Return Request Received</h1>
+      <p class="text" style="text-align: center;">A customer has submitted a new return/refund request.</p>
+      
+      <div class="details-box">
+        <div class="details-row">
+          <span class="details-label">Order Number:</span>
+          <span class="details-value">#${orderIdShort}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Customer:</span>
+          <span class="details-value">${customerName} (${customerEmail})</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Reason:</span>
+          <span class="details-value">${reason}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Details:</span>
+          <span class="details-value">${details}</span>
+        </div>
+      </div>
+
+      <div class="btn-container" style="text-align: center;">
+        <a href="${returnUrl}" class="btn">Review Request</a>
+      </div>
+    `;
+    return {
+      subject: `Return Request Received - Order #${orderIdShort}`,
+      html: baseTemplate(content, 'Return Request')
+    };
+  },
+
+  buildAdminLowInventoryEmail: async (product, alertType, currentStock, threshold) => {
+    const tmpl = await EmailTemplate.findOne({ name: 'admin_low_inventory', isActive: true });
+    
+    const productName = product.name;
+    const sku = product.sku || 'N/A';
+    const typeLabel = alertType === 'low_stock' ? 'Low Stock' : 'Out of Stock';
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+    const templateData = {
+      productName,
+      sku,
+      currentStock,
+      threshold,
+      alertType: typeLabel,
+      clientUrl
+    };
+
+    if (tmpl) {
+      return {
+        subject: parseTemplate(tmpl.subject, templateData),
+        html: parseTemplate(tmpl.template, templateData)
+      };
+    }
+
+    const content = `
+      <h1 class="title" style="color: #d4af37; text-align: center; letter-spacing: 2px;">Low Inventory Alert</h1>
+      <p class="text" style="text-align: center;">A product inventory level requires attention.</p>
+      
+      <div class="details-box">
+        <div class="details-row">
+          <span class="details-label">Product Name:</span>
+          <span class="details-value">${productName}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">SKU:</span>
+          <span class="details-value">${sku}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Current Stock:</span>
+          <span class="details-value highlight" style="color: #ff4d4d; font-weight: 700;">${currentStock}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Threshold:</span>
+          <span class="details-value">${threshold}</span>
+        </div>
+        <div class="details-row">
+          <span class="details-label">Alert Type:</span>
+          <span class="details-value">${typeLabel}</span>
+        </div>
+      </div>
+
+      <div class="btn-container" style="text-align: center;">
+        <a href="${clientUrl}/admin/inventory" class="btn">Manage Inventory</a>
+      </div>
+    `;
+    return {
+      subject: `Low Stock Alert: ${productName}`,
+      html: baseTemplate(content, 'Low Inventory Alert')
+    };
+  },
+
+  buildRegistrationOtpEmail: async (user, plainOtp) => {
+    const tmpl = await EmailTemplate.findOne({ name: 'user_registration_otp', isActive: true });
+    const templateData = {
+      userName: user.name || 'Customer',
+      otp: plainOtp,
+      email: user.email
+    };
+
+    if (tmpl) {
+      return {
+        subject: parseTemplate(tmpl.subject, templateData),
+        html: parseTemplate(tmpl.template, templateData)
+      };
+    }
+
+    const content = `
+      <h1 class="title" style="color: #d4af37; text-align: center; letter-spacing: 2px;">LUXESTORE</h1>
+      <p class="text" style="text-align: center;">Your One-Time Password (OTP) for account verification is:</p>
+      <div style="margin: 32px auto; max-width: 200px; padding: 20px; background: #1a1917; border: 1px solid #33312e; border-radius: 8px; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #d4af37; text-align: center;">
+        ${plainOtp}
+      </div>
+      <p class="text" style="font-size: 12px; color: #a09882; text-align: center;">This OTP is valid for 10 minutes.</p>
+    `;
+    return {
+      subject: 'Your LuxeStore Registration OTP',
+      html: baseTemplate(content, 'Account Verification')
+    };
+  },
+
+  buildPasswordResetEmail: async (user, resetUrl) => {
+    const tmpl = await EmailTemplate.findOne({ name: 'user_password_reset', isActive: true });
+    const templateData = {
+      userName: user.name || 'Customer',
+      resetUrl,
+      email: user.email
+    };
+
+    if (tmpl) {
+      return {
+        subject: parseTemplate(tmpl.subject, templateData),
+        html: parseTemplate(tmpl.template, templateData)
+      };
+    }
+
+    const content = `
+      <h1 class="title" style="color: #d4af37; text-align: center; letter-spacing: 2px;">LUXESTORE</h1>
+      <p class="text" style="text-align: center;">You requested a password reset. Click the button below to set your new password:</p>
+      <div class="btn-container" style="text-align: center;">
+        <a href="${resetUrl}" class="btn">Reset Password</a>
+      </div>
+      <p class="text" style="font-size: 12px; color: #a09882; text-align: center;">This link is valid for 30 minutes. If you did not request this reset, please ignore this email.</p>
+    `;
+    return {
+      subject: 'Reset Your LuxeStore Password',
+      html: baseTemplate(content, 'Password Reset')
+    };
   }
 };

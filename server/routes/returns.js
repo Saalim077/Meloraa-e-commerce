@@ -92,6 +92,49 @@ router.post('/', protect, [
     order.returnStatus = 'requested';
     await order.save();
 
+    // Send Customer Return Request Received Email
+    await order.populate('user', 'name email');
+    const customerEmail = order.shippingAddress?.email || order.user?.email;
+    if (customerEmail) {
+      (async () => {
+        try {
+          const dummyOrder = order.toObject ? order.toObject() : { ...order };
+          dummyOrder.returnReason = reason.replace(/_/g, ' ');
+          
+          const emailData = await emailTemplates.buildRefundRequestedEmail(dummyOrder);
+          await sendEmail({
+            to: customerEmail,
+            subject: emailData.subject,
+            html: emailData.html
+          });
+        } catch (e) {
+          console.error('Customer Return Request Email Failed:', e.message);
+        }
+      })();
+    }
+
+    // Send Admin Return Request Alert
+    const adminEmail = settings.email || process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
+    if (adminEmail) {
+      (async () => {
+        try {
+          const emailData = await emailTemplates.buildAdminRefundRequestedEmail(
+            order,
+            reason.replace(/_/g, ' '),
+            reasonDetails,
+            rma._id
+          );
+          await sendEmail({
+            to: adminEmail,
+            subject: emailData.subject,
+            html: emailData.html
+          });
+        } catch (e) {
+          console.error('Admin Return Request Alert Failed:', e.message);
+        }
+      })();
+    }
+
     res.status(201).json({ success: true, rma });
   } catch (err) { next(err); }
 });

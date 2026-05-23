@@ -259,27 +259,21 @@ router.post('/', protect, [
       logDebug(`No customer email found, skipping.`);
     }
 
-    // Fix #23: Notify admin about the new order
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
+    // Notify admin about the new order
+    const adminEmail = (settings && settings.email) || process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
     if (adminEmail) {
-      sendEmail({
-        to: adminEmail,
-        subject: `New Order Received - #${order.orderNumber || order._id.toString().slice(-8).toUpperCase()}`,
-        html: `
-          <div style="max-width:600px;margin:0 auto;background:#0f0e0d;font-family:'Helvetica Neue',Arial,sans-serif;padding:32px;">
-            <h1 style="color:#d4af37;letter-spacing:4px;text-align:center;font-size:24px;">NEW ORDER</h1>
-            <div style="background:#1a1917;border:1px solid #33312e;border-radius:8px;padding:24px;margin-top:16px;">
-              <p style="color:#e8e0d0;margin:0 0 12px;"><strong style="color:#d4af37;">Order:</strong> #${order.orderNumber || order._id.toString().slice(-8).toUpperCase()}</p>
-              <p style="color:#e8e0d0;margin:0 0 12px;"><strong style="color:#d4af37;">Customer:</strong> ${shippingAddress.firstName || ''} ${shippingAddress.lastName || ''} &lt;${customerEmail}&gt;</p>
-              <p style="color:#e8e0d0;margin:0 0 12px;"><strong style="color:#d4af37;">Total:</strong> ₹${total.toLocaleString('en-IN')}</p>
-              <p style="color:#e8e0d0;margin:0;"><strong style="color:#d4af37;">Payment:</strong> ${paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card'}</p>
-            </div>
-            <div style="text-align:center;margin-top:20px;">
-              <a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/admin/orders" style="background:#d4af37;color:#0f0e0d;padding:12px 28px;text-decoration:none;border-radius:4px;font-weight:700;display:inline-block;">View in Admin Panel</a>
-            </div>
-          </div>
-        `
-      }).catch(e => console.error('Admin notification email failed:', e));
+      (async () => {
+        try {
+          const emailData = await emailTemplates.buildAdminNewOrderEmail(order);
+          await sendEmail({
+            to: adminEmail,
+            subject: emailData.subject,
+            html: emailData.html
+          });
+        } catch (err) {
+          console.error('Admin new order notification email failed:', err.message);
+        }
+      })();
     }
 
     res.status(201).json({ success: true, order });
@@ -452,6 +446,25 @@ router.put('/:id/status', protect, authorize('admin', 'staff'), [
           }).catch(e => console.error('Status Update Email Failed:', e));
         }
       }
+
+      if (orderStatus === 'cancelled') {
+        (async () => {
+          try {
+            const settings = await Settings.findOne() || {};
+            const adminEmail = settings.email || process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
+            if (adminEmail) {
+              const adminEmailData = await emailTemplates.buildAdminOrderCancelledEmail(order);
+              await sendEmail({
+                to: adminEmail,
+                subject: adminEmailData.subject,
+                html: adminEmailData.html
+              });
+            }
+          } catch (e) {
+            console.error('Admin status update Cancel Email Failed:', e.message);
+          }
+        })();
+      }
     }
 
     res.json({ success: true, order });
@@ -502,6 +515,23 @@ router.put('/:id/cancel', protect, [
       }).catch(e => console.error('Cancel Email Failed:', e));
     }
 
+    // Send Admin Cancellation Alert
+    const adminEmail = settings.email || process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
+    if (adminEmail) {
+      (async () => {
+        try {
+          const adminEmailData = await emailTemplates.buildAdminOrderCancelledEmail(order);
+          await sendEmail({
+            to: adminEmail,
+            subject: adminEmailData.subject,
+            html: adminEmailData.html
+          });
+        } catch (e) {
+          console.error('Admin Cancel Email Failed:', e.message);
+        }
+      })();
+    }
+
     res.json({ success: true, order });
   } catch (err) { next(err); }
 });
@@ -535,6 +565,23 @@ router.put('/:id/return-request', protect, [
         subject: emailData.subject,
         html: emailData.html
       }).catch(e => console.error('Return Request Email Failed:', e));
+    }
+
+    // Send Admin Return Request Alert
+    const adminEmail = settings.email || process.env.ADMIN_EMAIL || process.env.STORE_EMAIL;
+    if (adminEmail) {
+      (async () => {
+        try {
+          const emailData = await emailTemplates.buildAdminRefundRequestedEmail(order, reason, '', null);
+          await sendEmail({
+            to: adminEmail,
+            subject: emailData.subject,
+            html: emailData.html
+          });
+        } catch (e) {
+          console.error('Admin Return Request Alert Failed:', e.message);
+        }
+      })();
     }
 
     res.json({ success: true, order, message: 'Return request submitted' });
