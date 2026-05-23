@@ -387,9 +387,9 @@ router.put('/:id/status', protect, authorize('admin', 'staff'), [
       };
 
       if (status === 'approved') {
-        emailData = emailTemplates.buildRefundApprovedEmail(dummyOrder);
+        emailData = await emailTemplates.buildRefundApprovedEmail(dummyOrder);
       } else if (status === 'completed') {
-        emailData = emailTemplates.buildRefundProcessedEmail(dummyOrder);
+        emailData = await emailTemplates.buildRefundProcessedEmail(dummyOrder);
       }
 
       if (emailData) {

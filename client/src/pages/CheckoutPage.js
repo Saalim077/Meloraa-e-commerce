@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import Header from '../components/Header';
+import { clearCart } from '../store';
 import '../styles/checkout.css';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector(s => s.auth);
   const [cartItems, setCartItems] = useState(JSON.parse(localStorage.getItem('cart') || '[]'));
   const [loading, setLoading] = useState(false);
@@ -220,7 +222,7 @@ export default function CheckoutPage() {
       const response = await api.post('/orders', orderData);
 
       // Clear cart
-      localStorage.removeItem('cart');
+      dispatch(clearCart());
 
       toast.success('Order created successfully!');
       navigate(`/order-confirmation/${response.data.order?._id || response.data._id}`);

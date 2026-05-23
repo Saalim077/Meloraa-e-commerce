@@ -435,13 +435,14 @@ router.put('/:id/status', protect, authorize('admin', 'staff'), [
       }
     }
 
-    // Send email notification if shipped or delivered
-    if (orderStatus === 'shipped' || orderStatus === 'delivered') {
+    // Send email notification if shipped, delivered, or cancelled
+    if (orderStatus === 'shipped' || orderStatus === 'delivered' || orderStatus === 'cancelled') {
       const customerEmail = order.shippingAddress?.email || order.user?.email;
       if (customerEmail) {
         let emailData;
         if (orderStatus === 'shipped') emailData = await emailTemplates.buildShippedEmail(order);
         if (orderStatus === 'delivered') emailData = await emailTemplates.buildDeliveredEmail(order);
+        if (orderStatus === 'cancelled') emailData = await emailTemplates.buildCancelledEmail(order);
         
         if (emailData) {
           sendEmail({
