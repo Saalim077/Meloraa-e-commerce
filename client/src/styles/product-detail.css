@@ -6,7 +6,7 @@
 }
 
 .breadcrumb {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto 30px;
   display: flex;
   align-items: center;
@@ -30,7 +30,7 @@
 }
 
 .detail-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto 80px;
   display: grid;
   grid-template-columns: 100px 1fr 450px;
@@ -43,7 +43,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 850px;
+  max-height: 735px;
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -78,6 +78,8 @@
 .main-stage {
   background: #f9f9f9;
   width: 100%;
+  max-width: 550px;
+  margin: 0 auto;
   aspect-ratio: 3/4;
   overflow: hidden;
 }
@@ -278,7 +280,7 @@
 
 /* Tabs Section */
 .product-tabs {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   border-top: 1px solid #eee;
 }

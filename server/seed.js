@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const User = require('./models/User');
 const Product = require('./models/Product');
-const { Category, Coupon, Order, Return } = require('./models/index');
+const { Category, Coupon, Order, Return, BlogPost } = require('./models/index');
 
 const seed = async () => {
   try {
@@ -18,6 +18,7 @@ const seed = async () => {
       Coupon.deleteMany(),
       Order.deleteMany(),
       Return.deleteMany(),
+      BlogPost.deleteMany(),
     ]);
     console.log('🗑️  Cleared existing data');
 
@@ -140,6 +141,44 @@ const seed = async () => {
     }
 
     console.log('📦 Sample orders and RMA created');
+
+    // Seed Sample Blogs
+    await BlogPost.insertMany([
+      {
+        title: 'The Art of Silk: Elevating Your Everyday Wardrobe',
+        slug: 'the-art-of-silk-elevating-your-everyday-wardrobe',
+        excerpt: 'Discover the timeless elegance of premium silk blouses and how to transition them effortlessly from day-to-night styling.',
+        content: `# The Art of Silk: Elevating Your Everyday Wardrobe\n\nSilk is more than just a fabric; it is a statement of understated luxury and timeless elegance. In this edition of the Meloraa Journal, we explore the heritage of silk and how to integrate it into your everyday curation.\n\n## Why Silk Matters\n\nUnlike synthetic alternatives, pure silk offers unparalleled breathability and a natural, soft luster that catches the light beautifully. It drapes naturally on the body, offering both comfort and sophistication.\n\n- **Natural Lustre**: The triangular prism-like structure of the silk fibre allows it to refract incoming light at different angles.\n- **Hypoallergenic**: Naturally resistant to dust mites, mould, and fungi, making it ideal for sensitive skin.\n- **Temperature Regulating**: Warm in winter, cool in summer.\n\n## How to Style a Silk Blouse\n\nTransitioning a silk blouse from a professional daytime context to a relaxed evening affair requires minimal adjustment.\n\n### Look 1: The Modern Executive\nPair the Versailles Silk Blouse with high-waisted tailored trousers in beige or ivory. Complete the look with block-heel mules and minimal gold jewellery.\n\n### Look 2: Evening Elegance\nDrape the silk blouse over a satin slip dress or wear it slightly unbuttoned with tailored silk skirts. Add a pearl-clasp clutch to introduce texture.\n\n> "True luxury is not about being noticed, it is about being remembered." — Meloraa Editorial`,
+        coverImage: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=85',
+        author: 'Meloraa Editorial',
+        tags: ['silk', 'fashion', 'styling'],
+        status: 'published',
+        publishedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+      },
+      {
+        title: 'Transitioning Seasons: A Guide to Layering Knitwear',
+        slug: 'transitioning-seasons-a-guide-to-layering-knitwear',
+        excerpt: 'Master the subtle craft of layering luxurious cashmere and wool knits to stay warm yet sophisticated during season changes.',
+        content: `# Transitioning Seasons: A Guide to Layering Knitwear\n\nAs the air grows crisp, our wardrobe must adapt. The secret to style during transition seasons lies in the art of layering knitwear. It is not merely about staying warm—it is about combining textures, colors, and volumes to create depth.\n\n## The Foundation: Start with Quality\n\nThe key to successful layering is selecting high-quality, breathable fibers. Heavy synthetics will trap heat and feel bulky, while lightweight, premium natural fibers like cashmere and merino wool layer beautifully without adding unnecessary weight.\n\n## 3 Core Rules of Layering\n\n### 1. Contrast Your Textures\nCombine a fine-gauge knit under a structured, heavy-textured overcoat. The contrast between smooth silk, soft cashmere, and robust wool creates visual interest.\n\n### 2. Play with Proportions\nWear a longer coat over a fitted sweater, or pair an oversized knit with slim-fit trousers. This balances your silhouette.\n\n### 3. Stick to a Harmonious Palette\nUse warm neutral tones—like oatmeal, ivory, taupe, and deep maroon—to ensure every layer blends seamlessly.\n\n> "Simplicity is the keynote of all true elegance." — Coco Chanel`,
+        coverImage: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=85',
+        author: 'Meloraa Editorial',
+        tags: ['knitwear', 'cashmere', 'winter'],
+        status: 'published',
+        publishedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+      },
+      {
+        title: 'Investing in Timeless Accessories',
+        slug: 'investing-in-timeless-accessories',
+        excerpt: 'From full-grain leather totes to layered gold chains, learn which accessories are worth the investment for a capsule wardrobe.',
+        content: `# Investing in Timeless Accessories\n\nA capsule wardrobe is only as strong as the details that complete it. While apparel trends shift with the seasons, accessories stand the test of time. Here is our edit of the essential investments that elevate any look.\n\n## The Statement Leather Tote\nA structured leather tote in black or tan is the cornerstone of a functional wardrobe. Look for full-grain leather and hand-finished stitching, which gain character and beautiful patina with age.\n\n- **Versatility**: Easily transitions from workday meetings to weekend travels.\n- **Durability**: Premium leather can withstand daily use for decades if properly conditioned.\n\n## Fine Jewellery and Minimal Gold\nDainty gold necklaces, diamond studs, and textured cuffs add the perfect touch of polish without overpowering your look.\n\n### How to Care for Your Accessories\nStore leather bags in dust covers when not in use. Keep fine jewelry in a soft-lined box and clean regularly with a microfibre cloth to maintain its brilliance.`,
+        coverImage: 'https://images.unsplash.com/photo-1509319117193-57bab727e09d?auto=format&fit=crop&w=800&q=85',
+        author: 'Meloraa Editorial',
+        tags: ['accessories', 'leather', 'jewellery'],
+        status: 'published',
+        publishedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      }
+    ]);
+    console.log('📝 3 sample blog posts created');
 
     console.log('\n✅ Seed complete!');
     console.log('─────────────────────────────');

@@ -6,6 +6,7 @@ import api from '../utils/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../styles/pages.css';
+import '../styles/storefront.css';
 
 export default function HomePage() {
   const dispatch = useDispatch();
@@ -154,27 +155,27 @@ export default function HomePage() {
 
       {/* ─── Testimonials Section ────────────────────────────────────────── */}
       {settings.testimonials?.filter(t => t.isActive).length > 0 && (
-        <section className="section testimonials-section" style={{ background: '#fcfaf7', padding: '80px 0' }}>
+        <section className="section testimonials-section">
           <div className="container">
             <h2 className="section-title-centered">CLIENT EXPERIENCES</h2>
-            <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', marginTop: '40px' }}>
+            <div className="testimonials-grid">
               {settings.testimonials.filter(t => t.isActive).map((testimonial, idx) => (
-                <div key={idx} className="testimonial-card" style={{ background: '#fff', padding: '32px', borderRadius: '16px', border: '1px solid #f0ebe4', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                  <div style={{ color: 'var(--gold)', fontSize: '1.2rem', marginBottom: '16px' }}>
+                <div key={idx} className="testimonial-card">
+                  <div className="testimonial-rating">
                     {'★'.repeat(testimonial.rating)}{'☆'.repeat(5 - testimonial.rating)}
                   </div>
-                  <p style={{ fontStyle: 'italic', color: '#6b665e', marginBottom: '24px', lineHeight: '1.6' }}>"{testimonial.content}"</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: 'auto' }}>
+                  <p className="testimonial-content">"{testimonial.content}"</p>
+                  <div className="testimonial-author">
                     {testimonial.image ? (
-                      <img src={testimonial.image} alt={testimonial.name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <img src={testimonial.image} alt={testimonial.name} className="testimonial-avatar" />
                     ) : (
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#f0ebe4', color: 'var(--maroon)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                      <div className="testimonial-avatar-fallback">
                         {testimonial.name.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontWeight: '700', color: '#1a1917' }}>{testimonial.name}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#8c857d' }}>{testimonial.role}</div>
+                    <div className="testimonial-author-meta">
+                      <div className="testimonial-author-name">{testimonial.name}</div>
+                      <div className="testimonial-author-role">{testimonial.role}</div>
                     </div>
                   </div>
                 </div>

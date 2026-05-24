@@ -1,84 +1,109 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { FiFacebook, FiYoutube, FiInstagram } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import '../styles/pages.css';
 
 export default function AboutPage() {
   return (
-    <div style={{ background: '#faf8f6', minHeight: '100vh' }}>
+    <div style={{ background: '#ffffff', minHeight: '100vh' }}>
       <Header />
-      <section className="page-hero">
-        <h1>About MELORAA</h1>
-        <p>Our story, our passion, our promise</p>
-        <div className="breadcrumb"><Link to="/">Home</Link> / About Us</div>
-      </section>
+      
+      <div className="about-us-container">
+        <h1 className="about-title">ABOUT US</h1>
+        
+        <img src="/images/logo.png" alt="Meloraa Logo" className="about-brand-logo" />
 
-      <div className="page-container">
-        {/* Our Story */}
-        <div className="content-section">
-          <h2>Our Story</h2>
-          <p>MELORAA was born from a simple belief — that premium fashion should be accessible to everyone. Founded with a passion for bringing the finest western wear to the modern Indian wardrobe, we've grown from a small idea into a brand that thousands of customers trust and love.</p>
-          <p style={{ marginTop: '16px' }}>Every piece in our collection is carefully curated to blend contemporary global trends with timeless elegance. We believe that what you wear is an expression of who you are, and we're here to help you make that statement with confidence.</p>
-        </div>
+        <div className="about-content-body">
+          <p className="about-intro-text">
+            Meloraa is a homegrown label started in India, inspired by today's multi-dimensional woman. The one who leads, laughs, dreams, and conquers on her own terms. We redefine power dressing for the modern woman. Meloraa clothing is not just fabric, it's a presence, it's a posture, it's power.
+          </p>
+          
+          <p className="about-intro-text">
+            At Meloraa, we create soft-sexy, warm and tailored silhouettes that transform the way a woman walks into a room. From boardrooms to brunches, deadlines to date nights, our pieces are designed to transition anytime, anywhere. We design clothing that doesn't just fit your body, it fits your mindset.
+          </p>
 
-        {/* Mission & Vision */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '30px' }}>
-          <div className="content-section" style={{ marginBottom: 0 }}>
-            <h2>Our Mission</h2>
-            <p>To deliver premium quality western wear that empowers individuals to express their unique style. We strive to make fashion that's not just beautiful, but sustainable and responsibly crafted.</p>
-          </div>
-          <div className="content-section" style={{ marginBottom: 0 }}>
-            <h2>Our Vision</h2>
-            <p>To become India's most trusted premium fashion destination, known for exceptional quality, innovative designs, and an unwavering commitment to customer satisfaction.</p>
-          </div>
-        </div>
+          <blockquote className="about-quote-block">
+            <span className="about-quote-icon">“</span>
+            <p className="about-quote-text">
+              Meloraa is more than fashion. It's a reminder — you belong, you lead, and you own your space.
+            </p>
+          </blockquote>
 
-        {/* Values */}
-        <div className="section-heading" style={{ marginTop: '60px' }}>
-          <h2>What Sets Us Apart</h2>
-          <p>The values that drive everything we do</p>
-          <div className="section-divider" />
-        </div>
+          <div className="about-social-links">
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FiFacebook /></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><FiYoutube /></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><FiInstagram /></a>
+          </div>
 
-        <div className="info-grid">
-          <div className="info-card">
-            <div className="card-icon">🎯</div>
-            <h3>Quality First</h3>
-            <p>Every garment undergoes rigorous quality checks before reaching you. We never compromise on materials or craftsmanship.</p>
-          </div>
-          <div className="info-card">
-            <div className="card-icon">🌿</div>
-            <h3>Sustainable Practices</h3>
-            <p>From eco-friendly packaging to responsible sourcing, we're committed to minimizing our environmental footprint.</p>
-          </div>
-          <div className="info-card">
-            <div className="card-icon">🤝</div>
-            <h3>Customer Obsessed</h3>
-            <p>Your satisfaction is our top priority. From easy returns to responsive support, we're always here for you.</p>
-          </div>
-          <div className="info-card">
-            <div className="card-icon">✂️</div>
-            <h3>Original Designs</h3>
-            <p>Our in-house design team creates exclusive pieces that blend global fashion trends with Indian sensibilities.</p>
-          </div>
-          <div className="info-card">
-            <div className="card-icon">📦</div>
-            <h3>Fast & Free Shipping</h3>
-            <p>We deliver across India with free shipping on orders above ₹999. Most orders reach you within 3-5 business days.</p>
-          </div>
-          <div className="info-card">
-            <div className="card-icon">🔒</div>
-            <h3>Secure Shopping</h3>
-            <p>Shop with confidence. All transactions are encrypted and your personal data is always protected.</p>
-          </div>
-        </div>
+          <div className="about-section-divider"></div>
 
-        {/* CTA */}
-        <div className="cta-banner">
-          <h2>Ready to Explore?</h2>
-          <p>Discover our latest collection and find your perfect style</p>
-          <Link to="/shop" className="btn-cta">Shop Now</Link>
+          <section className="about-philosophy-section">
+            <h2 className="about-philosophy-title">The Philosophy</h2>
+            <p className="about-philosophy-text">
+              Our philosophy is rooted in precision tailoring and structural silhouettes that enhance posture, confidence, and authority. We prioritize quality over quantity, creating timeless pieces that transcend fleeting trends and retain their strength season after season. Through a modern interpretation of power dressing, we celebrate a woman who is intelligent, ambitious, and unapologetically strong. Meloraa is intentional design for women who are building careers, companies, and legacies—and who understand that presence is power.
+            </p>
+          </section>
+
+          <div className="about-section-divider"></div>
+
+          <section className="about-testimonials-section">
+            <h2 className="about-testimonials-title">Testimonials</h2>
+            
+            <div className="about-testimonials-list">
+              <div className="about-testimonial-item">
+                <p className="about-testimonial-quote">
+                  "Wearing Meloraa completely changed how I walk into meetings. The structure, the tailoring, the way it sits on the shoulders — it instantly elevates my presence. I feel composed, powerful, and taken seriously the moment I step in."
+                </p>
+                <div className="about-testimonial-author-box">
+                  <div className="about-testimonial-author-avatar-fallback">PR</div>
+                  <div className="about-testimonial-author-meta">
+                    <div className="about-testimonial-author-name">Paula Robinson</div>
+                    <div className="about-testimonial-author-role">Fashion Designer & Reviewer</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="about-testimonial-item">
+                <p className="about-testimonial-quote">
+                  "I've never experienced clothing that impacts my confidence this way. Meloraa isn't just fashion—it's a mindset. It makes me stand a bit taller, speak clearer, and own my space unapologetically."
+                </p>
+                <div className="about-testimonial-author-box">
+                  <div className="about-testimonial-author-avatar-fallback">LC</div>
+                  <div className="about-testimonial-author-meta">
+                    <div className="about-testimonial-author-name">Luis Carlos</div>
+                    <div className="about-testimonial-author-role">Fashion Designer & Reviewer</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="about-testimonial-item">
+                <p className="about-testimonial-quote">
+                  "MELORAA clothing is structural yet fluid. It's timeless, well-constructed, and designed with intention."
+                </p>
+                <div className="about-testimonial-author-box">
+                  <div className="about-testimonial-author-avatar-fallback">ES</div>
+                  <div className="about-testimonial-author-meta">
+                    <div className="about-testimonial-author-name">Elicia Stone</div>
+                    <div className="about-testimonial-author-role">Fashion Designer & Reviewer</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="about-testimonial-item">
+                <p className="about-testimonial-quote">
+                  "Meloraa understands power dressing in a way that feels contemporary and feminine. It's structured without being stiff, bold without being loud. It's the kind of clothing that speaks before you do."
+                </p>
+                <div className="about-testimonial-author-box">
+                  <div className="about-testimonial-author-avatar-fallback">MC</div>
+                  <div className="about-testimonial-author-meta">
+                    <div className="about-testimonial-author-name">Matthew Commons</div>
+                    <div className="about-testimonial-author-role">Fashion Designer & Reviewer</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 

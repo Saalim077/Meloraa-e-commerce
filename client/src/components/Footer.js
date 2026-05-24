@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/footer.css';
+import { settingsAPI } from '../utils/api';
 
 export default function Footer() {
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    settingsAPI.getSettings()
+      .then(res => setSettings(res.data))
+      .catch(err => console.error('Failed to load settings in footer:', err));
+  }, []);
   return (
     <footer className="footer-premium">
       <div className="container">
@@ -59,8 +67,8 @@ export default function Footer() {
                <h2 className="footer-brand-name">MELORAA</h2>
             </div>
             <div className="footer-contact-info">
-              <p><strong>Phone:</strong><br />0120-420-0222</p>
-              <p><strong>Email:</strong><br />customercare@meloraa.com</p>
+              <p><strong>Phone:</strong><br />{settings?.contactPhone || '0120-420-0222'}</p>
+              <p><strong>Email:</strong><br />{settings?.contactEmail || 'customercare@meloraa.com'}</p>
             </div>
           </div>
         </div>

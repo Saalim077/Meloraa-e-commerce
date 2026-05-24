@@ -23,6 +23,8 @@ import FAQPage from './pages/FAQPage';
 import ShippingPolicyPage from './pages/ShippingPolicyPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
+import BlogList from './pages/BlogList';
+import BlogDetail from './pages/BlogDetail';
 
 // Admin pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -41,6 +43,7 @@ import AdminInventory from './pages/admin/AdminInventory';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminFinancials from './pages/admin/AdminFinancials';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
+import AdminBlogs from './pages/admin/AdminBlogs';
 
 // Auth pages
 import LoginPage from './pages/LoginPage';
@@ -123,11 +126,14 @@ export default function App() {
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/request-return" element={<ProtectedUser><ReturnRequestPage /></ProtectedUser>} />
         <Route path="/returns/:id" element={<ProtectedUser><ReturnStatusPage /></ProtectedUser>} />
+        <Route path="/journal" element={<BlogList />} />
+        <Route path="/journal/:slug" element={<BlogDetail />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/track-order" element={<TrackOrderPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+        <Route path="/returns" element={<ShippingPolicyPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsPage />} />
 
@@ -155,6 +161,7 @@ export default function App() {
           <Route path="reviews" element={<AdminReviews />} />
           <Route path="financials" element={<AdminFinancials />} />
           <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="blogs" element={<AdminBlogs />} />
         </Route>
 
         {/* Fallback */}

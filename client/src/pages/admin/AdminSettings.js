@@ -394,6 +394,63 @@ export default function AdminSettings() {
                 <option value="America/New_York">America/New_York</option>
               </select>
             </div>
+            
+            <hr style={{ margin: '2rem 0', borderColor: '#e5dec9' }} />
+            <h3 style={{ color: 'var(--maroon)', fontFamily: 'var(--font-display)', marginBottom: '0.5rem' }}>Storefront Contact Details & Map</h3>
+            <p style={{ color: '#8c857d', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+              Configure the public contact details and Google Map location displayed on your storefront's "Contact Us" page and footer.
+            </p>
+            <div className="form-group">
+              <label>Storefront Contact Email</label>
+              <input
+                className="form-input"
+                type="email"
+                name="contactEmail"
+                value={settings.contactEmail || ''}
+                onChange={handleInputChange}
+                placeholder="support@meloraa.com"
+                readOnly={!isAdmin}
+              />
+            </div>
+            <div className="form-group">
+              <label>Storefront Contact Phone</label>
+              <input
+                className="form-input"
+                type="text"
+                name="contactPhone"
+                value={settings.contactPhone || ''}
+                onChange={handleInputChange}
+                placeholder="+91 98765 43210"
+                readOnly={!isAdmin}
+              />
+            </div>
+            <div className="form-group">
+              <label>Storefront Contact Address</label>
+              <textarea
+                className="form-input"
+                name="contactAddress"
+                value={settings.contactAddress || ''}
+                onChange={handleInputChange}
+                placeholder="MELORAA Fashion Pvt. Ltd.&#10;Mumbai, Maharashtra, India"
+                rows="3"
+                readOnly={!isAdmin}
+              />
+            </div>
+            <div className="form-group">
+              <label>Google Maps Embed Link or Iframe Code</label>
+              <textarea
+                className="form-input"
+                name="contactMapUrl"
+                value={settings.contactMapUrl || ''}
+                onChange={handleInputChange}
+                placeholder="Paste Google Maps iframe HTML code or direct embed URL here"
+                rows="3"
+                readOnly={!isAdmin}
+              />
+              <span style={{ fontSize: '0.75rem', color: '#8c857d', marginTop: '4px', display: 'block' }}>
+                Go to Google Maps &rarr; Share &rarr; Embed a map &rarr; Copy HTML, and paste the code or URL here.
+              </span>
+            </div>
           </div>
         )}
 

@@ -119,6 +119,16 @@ export const settingsAPI = {
   deleteEmailTemplate: (id) => api.delete(`/settings/email-templates/${id}`),
 };
 
+export const blogAPI = {
+  getBlogs: (params) => api.get('/blogs', { params }),
+  getBlog: (slugOrId) => api.get(`/blogs/${slugOrId}`),
+  getBlogTags: () => api.get('/blogs/tags'),
+  adminGetBlogs: () => api.get('/blogs/admin/all'),
+  adminCreateBlog: (d) => api.post('/blogs/admin', d),
+  adminUpdateBlog: (id, d) => api.put(`/blogs/admin/${id}`, d),
+  adminDeleteBlog: (id) => api.delete(`/blogs/admin/${id}`),
+};
+
 export const adminAPI = {
   getActivityLogs: (params) => api.get('/admin', { params }),
   getInventoryAlerts: (params) => api.get('/admin/inventory/alerts', { params }),

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart, openCart } from '../store';
 import api from '../utils/api';
@@ -12,6 +12,7 @@ import '../styles/storefront.css';
 export default function StoreFront() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [settings, setSettings] = useState(null);
@@ -31,6 +32,30 @@ export default function StoreFront() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search') || '';
+    setSearchTerm(searchParam);
+
+    const categoryParam = params.get('category') || '';
+    if (categoryParam) {
+      if (categoryParam === 'sale') {
+        setSelectedSale('sale');
+        setSelectedCategory(null);
+      } else {
+        if (categories.length > 0) {
+          const match = categories.find(
+            c => c._id === categoryParam || c.name.toLowerCase() === categoryParam.toLowerCase() || c.slug === categoryParam
+          );
+          if (match) {
+            setSelectedCategory(match._id);
+            setSelectedSale(null);
+          }
+        }
+      }
+    }
+  }, [location.search, categories]);
 
   const loadInitialData = async () => {
     setLoading(true);

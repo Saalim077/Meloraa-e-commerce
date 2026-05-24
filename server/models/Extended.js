@@ -135,6 +135,12 @@ const settingsSchema = new mongoose.Schema({
   metaPixelId: { type: String, default: '' },
   googleAnalyticsId: { type: String, default: '' },
 
+  // Storefront Contact Details & Map
+  contactEmail: { type: String, default: 'help@shopmeloraa.com' },
+  contactPhone: { type: String, default: '+91 97799720364' },
+  contactAddress: { type: String, default: 'D-64, first floor Okhla Phase 1\nNew Delhi 110020' },
+  contactMapUrl: { type: String, default: 'https://maps.google.com/maps?q=D-64%2C%20first%20floor%20Okhla%20Phase%201%2CNew%20Delhi%20110020&t=&z=15&ie=UTF8&iwloc=&output=embed' },
+
 }, { timestamps: true });
 
 const Settings = mongoose.model('Settings', settingsSchema);

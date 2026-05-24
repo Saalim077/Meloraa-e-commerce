@@ -58,6 +58,7 @@
 html {
   font-size: 15px;
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -66,6 +67,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* Headings */

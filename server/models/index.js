@@ -194,5 +194,6 @@ const Order = mongoose.model('Order', orderSchema);
 const Coupon = mongoose.model('Coupon', couponSchema);
 const Product = require('./Product');
 const Return = require('./Return');
+const BlogPost = require('./BlogPost');
 
-module.exports = { Category, Order, Coupon, Return, Counter, Product };
+module.exports = { Category, Order, Coupon, Return, Counter, Product, BlogPost };

@@ -17,6 +17,7 @@ const NAV = [
   { to: '/admin/financials', label: 'Financials', icon: '₹' },
   { to: '/admin/analytics', label: 'Insights', icon: '📈' },
   { to: '/admin/activity-logs', label: 'Activity Logs', icon: '📜' },
+  { to: '/admin/blogs', label: 'Manage Blogs', icon: '📝' },
   { to: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ];
 

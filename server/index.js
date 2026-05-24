@@ -107,6 +107,7 @@ app.use('/api/settings', require('./routes/settings'));
 app.use('/api/admin', require('./routes/admin').router);
 app.use('/api/bulk', require('./routes/bulk-operations'));
 app.use('/api/returns', require('./routes/returns'));
+app.use('/api/blogs', require('./routes/blogs'));
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

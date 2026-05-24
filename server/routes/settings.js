@@ -38,7 +38,8 @@ router.put('/', protect, authorize('admin'), async (req, res) => {
       'smtpUser', 'smtpPassword', 'stripePublicKey', 'stripeSecretKey',
       'shippingEnabled', 'standardShippingCost', 'freeShippingThreshold', 'shippingZones',
       'taxEnabled', 'taxInclusive', 'taxRate', 'taxLabel', 'taxClasses', 'itemsPerPage', 'currencySymbol', 'currencyCode', 'timezone',
-      'commonAttributes', 'shopFilters', 'rmaPolicies', 'homepageBanners', 'testimonials', 'metaPixelId', 'googleAnalyticsId'
+      'commonAttributes', 'shopFilters', 'rmaPolicies', 'homepageBanners', 'testimonials', 'metaPixelId', 'googleAnalyticsId',
+      'contactEmail', 'contactPhone', 'contactAddress', 'contactMapUrl'
     ];
 
     Object.keys(req.body).forEach(key => {
