@@ -28,6 +28,7 @@ export default function StoreFront() {
   const [selectedSale, setSelectedSale] = useState(null); // 'sale', 'regular'
   const [selectedAttrs, setSelectedAttrs] = useState({}); // { Color: ['Red'], Size: ['M'] }
   const [selectedRating, setSelectedRating] = useState(0);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -110,8 +111,8 @@ export default function StoreFront() {
 
     // Price
     const price = p.salePrice || p.price;
-    if (priceRange.min && price < Number(priceRange.min)) return false;
-    if (priceRange.max && price > Number(priceRange.max)) return false;
+    if (priceRange.min !== '' && priceRange.min !== null && priceRange.min !== undefined && price < Number(priceRange.min)) return false;
+    if (priceRange.max !== '' && priceRange.max !== null && priceRange.max !== undefined && price > Number(priceRange.max)) return false;
 
     // Sale
     if (selectedSale === 'sale' && !p.isOnSale) return false;
@@ -176,6 +177,7 @@ export default function StoreFront() {
 
 
       <div className="store-container">
+        <div className={`filter-overlay ${filterDrawerOpen ? 'open' : ''}`} onClick={() => setFilterDrawerOpen(false)} />
         <ProductFilters
           products={products}
           categories={categories}
@@ -190,17 +192,24 @@ export default function StoreFront() {
             selectedRating, setSelectedRating,
             setSearchTerm, toggleAttrFilter
           }}
+          isOpen={filterDrawerOpen}
+          onClose={() => setFilterDrawerOpen(false)}
         />
 
         <main className="store-main">
-          <div className="search-bar">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
+          <div className="store-action-bar">
+            <div className="search-bar">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            <button className="btn-filter-toggle" onClick={() => setFilterDrawerOpen(true)}>
+              <span className="filter-icon">⚙️</span> Filters
+            </button>
           </div>
 
           {error && <div style={{ color: '#ff6b6b', padding: '20px' }}>⚠️ {error}</div>}

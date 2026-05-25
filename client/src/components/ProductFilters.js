@@ -4,7 +4,9 @@ export default function ProductFilters({
     products,
     categories,
     settings,
-    filterProps
+    filterProps,
+    isOpen,
+    onClose
 }) {
     const {
         selectedCategory, setSelectedCategory,
@@ -18,7 +20,12 @@ export default function ProductFilters({
     } = filterProps;
 
     return (
-        <aside className="sidebar">
+        <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+            {/* Drawer Header for Mobile */}
+            <div className="filter-drawer-header">
+                <h3>Filters</h3>
+                <button className="filter-close-btn" onClick={onClose}>&times;</button>
+            </div>
             {(!settings || !settings.shopFilters || settings.shopFilters.length === 0) ? (
                 <>
                     <h3>Categories</h3>
@@ -54,20 +61,67 @@ export default function ProductFilters({
                             </div>
                         )}
 
-                        {filter.type === 'price' && (
-                            <div className="price-filter">
-                                <div className="price-inputs">
-                                    <div className="input-field">
-                                        <label>Min Price:</label>
-                                        <input type="number" value={priceRange.min} onChange={e => setPriceRange(p => ({ ...p, min: e.target.value }))} placeholder="Min" />
+                        {filter.type === 'price' && (() => {
+                            // Calculate max price dynamically from products list
+                            const maxPrice = products.length > 0 ? Math.max(...products.map(p => p.salePrice || p.price || 0), 10000) : 10000;
+                            const minPrice = 0;
+
+                            const minVal = priceRange.min === '' ? minPrice : Number(priceRange.min);
+                            const maxVal = priceRange.max === '' || priceRange.max === '999999' ? maxPrice : Number(priceRange.max);
+
+                            const minPercent = ((minVal - minPrice) / (maxPrice - minPrice)) * 100;
+                            const maxPercent = ((maxVal - minPrice) / (maxPrice - minPrice)) * 100;
+
+                            return (
+                                <div className="price-slider-filter-wrapper">
+                                    {/* Top labels */}
+                                    <div className="price-slider-labels top-labels">
+                                        <span>₹{minVal}</span>
+                                        <span>₹{maxVal}</span>
                                     </div>
-                                    <div className="input-field">
-                                        <label>Max Price:</label>
-                                        <input type="number" value={priceRange.max} onChange={e => setPriceRange(p => ({ ...p, max: e.target.value }))} placeholder="Max" />
+
+                                    {/* Slider track and thumbs */}
+                                    <div className="price-slider-track-container">
+                                        <input
+                                            type="range"
+                                            min={minPrice}
+                                            max={maxPrice}
+                                            value={minVal}
+                                            onChange={(e) => {
+                                                const value = Math.min(Number(e.target.value), maxVal - 50);
+                                                setPriceRange(p => ({ ...p, min: String(value) }));
+                                            }}
+                                            className="price-slider-thumb thumb-left"
+                                        />
+                                        <input
+                                            type="range"
+                                            min={minPrice}
+                                            max={maxPrice}
+                                            value={maxVal}
+                                            onChange={(e) => {
+                                                const value = Math.max(Number(e.target.value), minVal + 50);
+                                                setPriceRange(p => ({ ...p, max: String(value) }));
+                                            }}
+                                            className="price-slider-thumb thumb-right"
+                                        />
+                                        <div className="price-slider-track-bg" />
+                                        <div
+                                            className="price-slider-track-range"
+                                            style={{
+                                                left: `${minPercent}%`,
+                                                width: `${maxPercent - minPercent}%`
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Bottom labels */}
+                                    <div className="price-slider-labels bottom-labels">
+                                        <span>₹{minVal}</span>
+                                        <span>₹{maxVal}</span>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {filter.type === 'sale' && (
                             <div className="filter-options">
