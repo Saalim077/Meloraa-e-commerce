@@ -37,6 +37,8 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [discount, setDiscount] = useState(0);
+  const [checkoutStep, setCheckoutStep] = useState(1);
+
 
   // Fetch settings
   useEffect(() => {
@@ -175,6 +177,34 @@ export default function CheckoutPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleContinueToPayment = (e) => {
+    e.preventDefault();
+    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode'];
+    const missingFields = requiredFields.filter(f => !formData[f]);
+    
+    if (missingFields.length > 0) {
+      toast.error('Please fill in all shipping fields');
+      return;
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setCheckoutStep(2);
+  };
+
+  const handleContinueToReview = (e) => {
+    e.preventDefault();
+    if (!formData.paymentMethod) {
+      toast.error('Please select a payment method');
+      return;
+    }
+    setCheckoutStep(3);
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -184,6 +214,13 @@ export default function CheckoutPage() {
     
     if (missingFields.length > 0) {
       toast.error('Please fill in all required fields');
+      setCheckoutStep(1);
+      return;
+    }
+
+    if (!formData.paymentMethod) {
+      toast.error('Please select a payment method');
+      setCheckoutStep(2);
       return;
     }
 
@@ -255,173 +292,267 @@ export default function CheckoutPage() {
           <h1>Checkout</h1>
 
           <div className="checkout-layout">
-            {/* Form */}
+            {/* Accordion Steps Form */}
             <form className="checkout-form" onSubmit={handleSubmit}>
-              <div className="form-section">
-                <h2>Shipping Information</h2>
+              
+              {/* STEP 1: SHIPPING DETAILS */}
+              <div className={`checkout-accordion-step ${checkoutStep === 1 ? 'active' : ''} ${checkoutStep > 1 ? 'completed' : ''}`}>
+                <div className="step-header" onClick={() => checkoutStep > 1 && setCheckoutStep(1)}>
+                  <div className="step-header-left">
+                    <span className="step-number">1</span>
+                    <div className="step-header-text">
+                      <h3>Shipping Information</h3>
+                      {checkoutStep > 1 && (
+                        <p className="step-summary">
+                          {formData.firstName} {formData.lastName} • {formData.address}, {formData.city} • {formData.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {checkoutStep > 1 && <button type="button" className="step-edit-btn">Edit</button>}
+                </div>
 
-                {user?.addresses && user.addresses.length > 0 && (
-                  <div style={{ marginBottom: '24px' }}>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--maroon)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px' }}>
-                      Select Delivery Address
-                    </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                      {user.addresses.map((addr) => (
-                        <div
-                          key={addr._id}
-                          onClick={() => handleAddressSelect(addr._id)}
-                          style={{
-                            padding: '14px',
-                            border: selectedAddressId === addr._id ? '2px solid #4f0c10' : '1px solid #e5e2df',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            background: selectedAddressId === addr._id ? 'rgba(79, 12, 16, 0.02)' : 'white',
-                            transition: 'all 0.2s',
-                          }}
-                        >
-                          <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '6px', color: '#1a1a1a', display: 'flex', justifyContent: 'space-between', letterSpacing: '0.05em' }}>
-                            <span>{addr.type?.toUpperCase() || 'HOME'}</span>
-                            {addr.isDefault && <span style={{ fontSize: '0.7rem', color: '#4f0c10', background: '#f5ebeb', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>DEFAULT</span>}
-                          </div>
-                          <div style={{ fontSize: '0.825rem', color: '#666', lineHeight: '1.5' }}>
-                            <strong>{addr.firstName} {addr.lastName}</strong><br />
-                            {addr.address || addr.addressLine1}<br />
-                            {addr.city}, {addr.state} - {addr.zipCode || addr.pincode}
+                {checkoutStep === 1 && (
+                  <div className="step-content">
+                    {user?.addresses && user.addresses.length > 0 && (
+                      <div style={{ marginBottom: '24px' }}>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--maroon)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '10px' }}>
+                          Select Delivery Address
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                          {user.addresses.map((addr) => (
+                            <div
+                              key={addr._id}
+                              onClick={() => handleAddressSelect(addr._id)}
+                              style={{
+                                padding: '14px',
+                                border: selectedAddressId === addr._id ? '2px solid #4f0c10' : '1px solid #e5e2df',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                background: selectedAddressId === addr._id ? 'rgba(79, 12, 16, 0.02)' : 'white',
+                                transition: 'all 0.2s',
+                              }}
+                            >
+                              <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '6px', color: '#1a1a1a', display: 'flex', justifyContent: 'space-between', letterSpacing: '0.05em' }}>
+                                <span>{addr.type?.toUpperCase() || 'HOME'}</span>
+                                {addr.isDefault && <span style={{ fontSize: '0.7rem', color: '#4f0c10', background: '#f5ebeb', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>DEFAULT</span>}
+                              </div>
+                              <div style={{ fontSize: '0.825rem', color: '#666', lineHeight: '1.5' }}>
+                                <strong>{addr.firstName} {addr.lastName}</strong><br />
+                                {addr.address || addr.addressLine1}<br />
+                                {addr.city}, {addr.state} - {addr.zipCode || addr.pincode}
+                              </div>
+                            </div>
+                          ))}
+                          <div
+                            onClick={() => handleAddressSelect('new')}
+                            style={{
+                              padding: '14px',
+                              border: selectedAddressId === 'new' ? '2px solid #4f0c10' : '1px dashed #ddd',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              background: selectedAddressId === 'new' ? 'rgba(79, 12, 16, 0.02)' : 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.85rem',
+                              fontWeight: '700',
+                              color: '#4f0c10',
+                              minHeight: '80px',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}
+                          >
+                            + New Address
                           </div>
                         </div>
-                      ))}
-                      <div
-                        onClick={() => handleAddressSelect('new')}
-                        style={{
-                          padding: '14px',
-                          border: selectedAddressId === 'new' ? '2px solid #4f0c10' : '1px dashed #ddd',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          background: selectedAddressId === 'new' ? 'rgba(79, 12, 16, 0.02)' : 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.85rem',
-                          fontWeight: '700',
-                          color: '#4f0c10',
-                          minHeight: '80px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em'
-                        }}
-                      >
-                        + New Address
+                      </div>
+                    )}
+
+                    <div className="form-row">
+                      <input
+                        type="text"
+                        name="firstName"
+                        placeholder="First Name"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        required
+                      />
+                      <input
+                        type="text"
+                        name="lastName"
+                        placeholder="Last Name"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                    />
+
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="Phone Number"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                    />
+
+                    <input
+                      type="text"
+                      name="address"
+                      placeholder="Street Address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      required
+                    />
+
+                    <div className="form-row">
+                      <input
+                        type="text"
+                        name="city"
+                        placeholder="City"
+                        value={formData.city}
+                        onChange={handleChange}
+                        required
+                      />
+                      <input
+                        type="text"
+                        name="state"
+                        placeholder="State"
+                        value={formData.state}
+                        onChange={handleChange}
+                        required
+                      />
+                      <input
+                        type="text"
+                        name="zipCode"
+                        placeholder="ZIP Code"
+                        value={formData.zipCode}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <button 
+                      type="button" 
+                      className="btn-continue-step" 
+                      onClick={handleContinueToPayment}
+                    >
+                      Continue to Payment ➔
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 2: PAYMENT METHOD */}
+              <div className={`checkout-accordion-step ${checkoutStep === 2 ? 'active' : ''} ${checkoutStep > 2 ? 'completed' : ''} ${checkoutStep < 2 ? 'locked' : ''}`}>
+                <div className="step-header" onClick={() => checkoutStep > 2 && setCheckoutStep(2)}>
+                  <div className="step-header-left">
+                    <span className="step-number">2</span>
+                    <div className="step-header-text">
+                      <h3>Payment Method</h3>
+                      {checkoutStep > 2 && (
+                        <p className="step-summary">
+                          {formData.paymentMethod === 'card' ? 'Stripe Credit/Debit Card' : 'Cash on Delivery (COD)'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {checkoutStep > 2 && <button type="button" className="step-edit-btn">Edit</button>}
+                </div>
+
+                {checkoutStep === 2 && (
+                  <div className="step-content">
+                    <div className="payment-methods">
+                      <label className={`payment-option ${formData.paymentMethod === 'card' ? 'active' : ''}`}>
+                        <input type="radio" name="paymentMethod" value="card" checked={formData.paymentMethod === 'card'} onChange={handleChange} required style={{ display: 'none' }} />
+                        <div className="payment-info">
+                          <div className="title">Credit/Debit Card</div>
+                          <div className="desc">Pay securely with Stripe</div>
+                        </div>
+                        {formData.paymentMethod === 'card' && <span style={{ color: '#4f0c10', fontWeight: 'bold' }}>✓</span>}
+                      </label>
+
+                      <label className={`payment-option ${formData.paymentMethod === 'cod' ? 'active' : ''}`}>
+                        <input type="radio" name="paymentMethod" value="cod" checked={formData.paymentMethod === 'cod'} onChange={handleChange} required style={{ display: 'none' }} />
+                        <div className="payment-info">
+                          <div className="title">Cash on Delivery (COD)</div>
+                          <div className="desc">Pay when your order arrives</div>
+                        </div>
+                        {formData.paymentMethod === 'cod' && <span style={{ color: '#4f0c10', fontWeight: 'bold' }}>✓</span>}
+                      </label>
+                    </div>
+
+                    {formData.paymentMethod === 'card' && (
+                      <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#fff8f8', border: '1px solid #ffd0d0', borderRadius: '6px', color: '#4f0c10', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                        <strong style={{ display: 'block', marginBottom: '5px' }}>🔒 Secure Sandbox Mode Active</strong>
+                        Our Stripe payment gateway is currently operating in secure test mode for verification. Your order will be placed successfully without requiring actual card details.
+                      </div>
+                    )}
+
+                    <button 
+                      type="button" 
+                      className="btn-continue-step" 
+                      onClick={handleContinueToReview}
+                    >
+                      Continue to Review ➔
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 3: REVIEW & PLACE ORDER */}
+              <div className={`checkout-accordion-step ${checkoutStep === 3 ? 'active' : ''} ${checkoutStep < 3 ? 'locked' : ''}`}>
+                <div className="step-header">
+                  <div className="step-header-left">
+                    <span className="step-number">3</span>
+                    <div className="step-header-text">
+                      <h3>Review & Place Order</h3>
+                    </div>
+                  </div>
+                </div>
+
+                {checkoutStep === 3 && (
+                  <div className="step-content">
+                    <div className="review-summary-panel" style={{ background: '#fdfcfc', border: '1px solid #eee', borderRadius: '8px', padding: '24px', marginBottom: '24px' }}>
+                      <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: '#666', lineHeight: '1.5' }}>
+                        Please review your shipping and payment information below before clicking Place Order.
+                      </p>
+                      
+                      <div className="review-summary-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div className="review-summary-box" style={{ fontSize: '0.85rem', lineHeight: '1.6' }}>
+                          <h4 style={{ margin: '0 0 8px 0', color: 'var(--maroon)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Delivery Address</h4>
+                          <p style={{ margin: 0, color: '#333' }}>
+                            <strong>{formData.firstName} {formData.lastName}</strong><br />
+                            {formData.address}<br />
+                            {formData.city}, {formData.state} - {formData.zipCode}<br />
+                            Phone: {formData.phone}
+                          </p>
+                        </div>
+                        <div className="review-summary-box" style={{ fontSize: '0.85rem', lineHeight: '1.6' }}>
+                          <h4 style={{ margin: '0 0 8px 0', color: 'var(--maroon)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment Details</h4>
+                          <p style={{ margin: 0, color: '#333' }}>
+                            Method: <strong>{formData.paymentMethod === 'card' ? 'Credit/Debit Card (Stripe)' : 'Cash on Delivery (COD)'}</strong>
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
 
-                <div className="form-row">
-                  <input
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="Phone Number"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  type="text"
-                  name="address"
-                  placeholder="Street Address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                />
-
-                <div className="form-row">
-                  <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="state"
-                    placeholder="State"
-                    value={formData.state}
-                    onChange={handleChange}
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="zipCode"
-                    placeholder="ZIP Code"
-                    value={formData.zipCode}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-section">
-                <h2>Payment Method</h2>
-                <div className="payment-methods">
-                  <label className={`payment-option ${formData.paymentMethod === 'card' ? 'active' : ''}`}>
-                    <input type="radio" name="paymentMethod" value="card" checked={formData.paymentMethod === 'card'} onChange={handleChange} required style={{ display: 'none' }} />
-                    <div className="payment-info">
-                      <div className="title">Credit/Debit Card</div>
-                      <div className="desc">Pay securely with Stripe</div>
-                    </div>
-                    {formData.paymentMethod === 'card' && <span style={{ color: '#4f0c10' }}>✓</span>}
-                  </label>
-
-                  <label className={`payment-option ${formData.paymentMethod === 'cod' ? 'active' : ''}`}>
-                    <input type="radio" name="paymentMethod" value="cod" checked={formData.paymentMethod === 'cod'} onChange={handleChange} required style={{ display: 'none' }} />
-                    <div className="payment-info">
-                      <div className="title">Cash on Delivery (COD)</div>
-                      <div className="desc">Pay when your order arrives</div>
-                    </div>
-                    {formData.paymentMethod === 'cod' && <span style={{ color: '#4f0c10' }}>✓</span>}
-                  </label>
-                </div>
-
-                {formData.paymentMethod === 'card' && (
-                  <div style={{ marginTop: '15px', padding: '15px', backgroundColor: '#fff8f8', border: '1px solid #ffd0d0', borderRadius: '6px', color: '#4f0c10', fontSize: '0.85rem', lineHeight: '1.5' }}>
-                    <strong style={{ display: 'block', marginBottom: '5px' }}>🔒 Secure Sandbox Mode Active</strong>
-                    Our Stripe payment gateway is currently operating in secure test mode for verification. Your order will be placed successfully without requiring actual card details.
+                    <button type="submit" className="btn-place-order" disabled={loading}>
+                      {loading ? 'Processing...' : 'Place Order'}
+                    </button>
                   </div>
                 )}
               </div>
-
-              <button type="submit" className="btn-place-order" disabled={loading}>
-                {loading ? 'Processing...' : 'Place Order'}
-              </button>
             </form>
 
             {/* Order Summary */}

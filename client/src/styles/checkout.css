@@ -111,3 +111,148 @@
   .form-row, .form-row.three { grid-template-columns: 1fr; }
   .checkout-summary { position: static; order: -1; }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   MULTI-STEP ACCORDION CHECKOUT FLOW
+   ────────────────────────────────────────────────────────────────────────── */
+.checkout-accordion-step {
+  border: 1px solid #e5e2df;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  background: #ffffff;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.checkout-accordion-step.active {
+  border-color: var(--maroon);
+  box-shadow: 0 4px 12px rgba(79, 12, 16, 0.08);
+}
+
+.checkout-accordion-step.completed {
+  border-color: #d4ced9;
+  background: #fafaf9;
+}
+
+.checkout-accordion-step.locked {
+  opacity: 0.65;
+  pointer-events: none;
+  background: #fafafa;
+}
+
+.step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: #ffffff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkout-accordion-step.completed .step-header {
+  background: #fbfbfc;
+}
+
+.step-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.checkout-accordion-step.active .step-number {
+  background: var(--maroon);
+  color: #ffffff;
+}
+
+.checkout-accordion-step.completed .step-number {
+  background: #2ecc71;
+  color: #ffffff;
+}
+
+.step-header-text h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #222;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.checkout-accordion-step.active .step-header-text h3 {
+  color: var(--maroon);
+}
+
+.step-summary {
+  margin: 4px 0 0 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.step-edit-btn {
+  background: none;
+  border: none;
+  color: var(--maroon);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.step-edit-btn:hover {
+  background: #f5ebeb;
+  color: var(--brand-black);
+}
+
+.step-content {
+  padding: 24px;
+  border-top: 1px solid #f0f0f0;
+  background: #ffffff;
+  animation: slideDown-check 0.3s ease-out;
+}
+
+@keyframes slideDown-check {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.btn-continue-step {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: var(--maroon);
+  color: #ffffff;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  margin-top: 24px;
+  border-radius: 4px;
+  transition: all 0.25s;
+}
+
+.btn-continue-step:hover {
+  background: var(--brand-black);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+

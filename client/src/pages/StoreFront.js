@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { addToCart, openCart } from '../store';
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
+import { addToCart, openCart, toggleWishlistItem } from '../store';
 import api from '../utils/api';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -29,6 +30,22 @@ export default function StoreFront() {
   const [selectedAttrs, setSelectedAttrs] = useState({}); // { Color: ['Red'], Size: ['M'] }
   const [selectedRating, setSelectedRating] = useState(0);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  const { user } = useSelector(s => s.auth);
+  const wishlistItems = useSelector(s => s.wishlist.items);
+
+  const handleWishlistToggle = (product) => {
+    if (!user) {
+      toast.error('Please login to save items to your wishlist');
+      return;
+    }
+    dispatch(toggleWishlistItem({
+      _id: product._id,
+      name: product.name,
+      price: product.price,
+      images: product.images || [product.image]
+    }));
+  };
 
   useEffect(() => {
     loadInitialData();
@@ -215,8 +232,15 @@ export default function StoreFront() {
           {error && <div style={{ color: '#ff6b6b', padding: '20px' }}>⚠️ {error}</div>}
 
           {loading ? (
-            <div className="loading-center">
-              <div className="spinner spinner-lg" />
+            <div className="products-grid">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="skeleton-product-card">
+                  <div className="skeleton-image" />
+                  <div className="skeleton-text" />
+                  <div className="skeleton-text short" />
+                  <div className="skeleton-price" />
+                </div>
+              ))}
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="no-products">
@@ -239,9 +263,19 @@ export default function StoreFront() {
                       />
                     </Link>
                     <div className="product-action-overlay">
-                      <button className="action-btn" title="Add to Wishlist">
-                        <i className="far fa-heart"></i>
-                      </button>
+                      {(() => {
+                        const isInWishlist = wishlistItems.some(i => i._id === product._id);
+                        return (
+                          <button
+                            className="action-btn"
+                            title={isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                            onClick={() => handleWishlistToggle(product)}
+                            style={{ color: isInWishlist ? '#ff4b4b' : '' }}
+                          >
+                            <i className={isInWishlist ? "fas fa-heart" : "far fa-heart"}></i>
+                          </button>
+                        );
+                      })()}
                       <button 
                         className="action-btn" 
                         title="Add to Cart"

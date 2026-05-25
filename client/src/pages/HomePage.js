@@ -13,10 +13,12 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
   const [settings, setSettings] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       const [prodRes, catRes, settingsRes] = await Promise.all([
         api.get('/products?limit=8&sort=-createdAt'),
@@ -26,7 +28,11 @@ export default function HomePage() {
       setFeatured(prodRes.data.products || []);
       setCategories((catRes.data.categories || []).filter(c => !c.parent).slice(0, 4));
       setSettings(settingsRes.data || {});
-    } catch (err) { console.error('Homepage data error:', err.message); }
+    } catch (err) { 
+      console.error('Homepage data error:', err.message); 
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getImg = (p) => p.images?.[0] || p.image || 'https://placehold.co/400x500?text=MELORAA';
@@ -129,26 +135,37 @@ export default function HomePage() {
           </div>
 
           <div className="featured-grid-premium" style={{ marginTop: '60px' }}>
-            {featured.slice(0, 4).map(product => (
-              <div key={product._id} className="product-card-premium fade-up">
-                <div className="product-img-wrapper">
-                  <Link to={`/product/${product._id}`}>
-                    <img src={getImg(product)} alt={product.name} />
-                  </Link>
-                  <button 
-                    onClick={() => { dispatch(addToCart({ ...product, productId: product._id })); dispatch(openCart()); }}
-                    className="btn-add-cart"
-                  >
-                    ADD TO CART
-                  </button>
+            {loading ? (
+              [...Array(4)].map((_, i) => (
+                <div key={i} className="skeleton-product-card">
+                  <div className="skeleton-image" />
+                  <div className="skeleton-text" />
+                  <div className="skeleton-text short" />
+                  <div className="skeleton-price" />
                 </div>
-                <div className="product-info-premium">
-                  <h4 className="product-name-premium">{product.name}</h4>
-                  <p className="product-cat-premium">{product.category?.name || 'Maroon'}</p>
-                  <p className="product-price-premium">₹{product.price?.toLocaleString('en-IN')}</p>
+              ))
+            ) : (
+              featured.slice(0, 4).map(product => (
+                <div key={product._id} className="product-card-premium fade-up">
+                  <div className="product-img-wrapper">
+                    <Link to={`/product/${product._id}`}>
+                      <img src={getImg(product)} alt={product.name} />
+                    </Link>
+                    <button 
+                      onClick={() => { dispatch(addToCart({ ...product, productId: product._id })); dispatch(openCart()); }}
+                      className="btn-add-cart"
+                    >
+                      ADD TO CART
+                    </button>
+                  </div>
+                  <div className="product-info-premium">
+                    <h4 className="product-name-premium">{product.name}</h4>
+                    <p className="product-cat-premium">{product.category?.name || 'Maroon'}</p>
+                    <p className="product-price-premium">₹{product.price?.toLocaleString('en-IN')}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
