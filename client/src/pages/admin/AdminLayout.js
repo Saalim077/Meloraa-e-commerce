@@ -46,7 +46,7 @@ export default function AdminLayout() {
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: '16px 12px' }}>
+        <nav style={{ flex: 1, padding: '16px 12px', overflowY: 'auto' }}>
           {NAV.map(({ to, label, icon, end }) => (
             <NavLink key={to} to={to} end={end}
               style={({ isActive }) => ({
